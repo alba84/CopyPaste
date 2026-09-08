@@ -1,0 +1,14 @@
+framework:
+    secret: '%env(APP_SECRET)%'
+    csrf_protection: true
+    form: true
+    session: true
+    router:
+        utf8: true
+    validation:
+        email_validation_mode: html5
+    cache:
+        app: cache.adapter.filesystem
+    messenger:
+        transports:
+            scheduler_default: 'scheduler://default'

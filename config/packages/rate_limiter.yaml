@@ -1,0 +1,12 @@
+framework:
+    rate_limiter:
+        create_paste:
+            policy: fixed_window
+            limit: 10
+            interval: '1 minute'
+            cache_pool: cache.app
+        unlock_paste:
+            policy: fixed_window
+            limit: 10
+            interval: '1 minute'
+            cache_pool: cache.app

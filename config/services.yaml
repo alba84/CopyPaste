@@ -1,0 +1,15 @@
+parameters:
+    app.paste_ttl_days: '%env(int:APP_PASTE_TTL_DAYS)%'
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            $pasteTtlDays: '%app.paste_ttl_days%'
+            $configuredOpsLimit: '%env(int:APP_KDF_OPSLIMIT)%'
+            $configuredMemLimit: '%env(int:APP_KDF_MEMLIMIT)%'
+            $createPasteLimiter: '@limiter.create_paste'
+            $unlockPasteLimiter: '@limiter.unlock_paste'
+    App\:
+        resource: '../src/'
+        exclude: ['../src/Entity/', '../src/Kernel.php']

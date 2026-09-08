@@ -1,0 +1,21 @@
+services:
+  php:
+    image: ghcr.io/alba84/copypaste:${IMAGE_TAG:-latest}
+    env_file: .env
+    volumes: [paste_data:/app/var/data]
+    restart: unless-stopped
+  nginx:
+    image: ghcr.io/alba84/copypaste-nginx:${IMAGE_TAG:-latest}
+    depends_on: [php]
+    ports: ["80:80"]
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+  scheduler:
+    image: ghcr.io/alba84/copypaste:${IMAGE_TAG:-latest}
+    command: php bin/console messenger:consume scheduler_default --time-limit=3600
+    env_file: .env
+    volumes: [paste_data:/app/var/data]
+    restart: unless-stopped
+volumes:
+  paste_data:

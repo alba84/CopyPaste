@@ -1,0 +1,53 @@
+name: CI
+on: [push, pull_request]
+permissions:
+  contents: read
+  packages: write
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: {php-version: '8.4', extensions: 'sodium, pdo_sqlite, intl', coverage: none}
+      - uses: actions/cache@v4
+        with: {path: ~/.composer/cache, key: "composer-${{ hashFiles('composer.lock') }}"}
+      - run: composer install --no-interaction --prefer-dist
+      - run: vendor/bin/php-cs-fixer fix --dry-run --diff
+      - run: vendor/bin/phpstan analyse
+      - run: php bin/console doctrine:migrations:migrate -n --env=test
+      - run: php bin/phpunit
+  build:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with: {registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}"}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: prod
+          push: true
+          tags: |
+            ghcr.io/alba84/copypaste:latest
+            ghcr.io/alba84/copypaste:${{ github.sha }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: nginx-prod
+          push: true
+          tags: |
+            ghcr.io/alba84/copypaste-nginx:latest
+            ghcr.io/alba84/copypaste-nginx:${{ github.sha }}
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.1
+        with: {ssh-private-key: "${{ secrets.DEPLOY_SSH_KEY }}"}
+      - run: |
+          ssh -o StrictHostKeyChecking=accept-new ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "cd ${{ secrets.DEPLOY_PATH }} && docker compose -f compose.prod.yaml pull && docker compose -f compose.prod.yaml up -d && docker compose -f compose.prod.yaml exec -T php bin/console doctrine:migrations:migrate -n && docker image prune -f"

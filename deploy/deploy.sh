@@ -47,10 +47,12 @@ docker compose -f "${COMPOSE_FILE}" stop nginx scheduler php || true
 
 readonly BACKUP_NAME="sqlite-$(date -u +%Y%m%dT%H%M%SZ).tar.gz"
 docker run --rm \
+    --user 0 \
+    --entrypoint sh \
     --volume "${COMPOSE_PROJECT_NAME}_paste_data:/data:ro" \
     --volume "${BACKUP_DIR}:/backup" \
-    alpine:3.22 \
-    sh -c "if [ -f /data/app.db ]; then tar -czf '/backup/${BACKUP_NAME}' -C /data app.db app.db-wal app.db-shm 2>/dev/null || tar -czf '/backup/${BACKUP_NAME}' -C /data app.db; fi"
+    "ghcr.io/alba84/copypaste:${RELEASE_TAG}" \
+    -c "if [ -f /data/app.db ]; then tar -czf '/backup/${BACKUP_NAME}' -C /data app.db app.db-wal app.db-shm 2>/dev/null || tar -czf '/backup/${BACKUP_NAME}' -C /data app.db; fi"
 
 docker compose -f "${COMPOSE_FILE}" run --rm --no-deps php \
     php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration

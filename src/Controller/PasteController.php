@@ -84,6 +84,6 @@ final class PasteController extends AbstractController
             }
         }
 
-        return $this->render('paste/view.html.twig',['paste' => $paste, 'form' => $form]);
+        return $this->render('paste/view.html.twig', ['paste' => $paste, 'form' => $form]);
     }
 }

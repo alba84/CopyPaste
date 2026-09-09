@@ -73,6 +73,6 @@ class Paste
             throw new \RuntimeException('Invalid encrypted payload.');
         }
 
-return $value;
+        return $value;
     }
 }

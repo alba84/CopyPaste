@@ -1,1 +1,10 @@
-{% extends 'base.html.twig' %}{% block title %}Расшифрованный текст — CopyPaste{% endblock %}{% block body %}<section class="card"><h1>Расшифрованный текст</h1><pre id="plaintext">{{ plaintext }}</pre><button type="button" data-copy="#plaintext">Скопировать текст</button></section>{% endblock %}{% block javascripts %}<script src="{{ asset('copy.js') }}" defer></script>{% endblock %}
+{% extends 'base.html.twig' %}
+{% block title %}Расшифрованный текст — CopyPaste{% endblock %}
+{% block body %}
+<section class="card" aria-labelledby="revealed-title">
+    <h1 id="revealed-title">Расшифрованный текст</h1>
+    <pre class="plaintext" id="plaintext">{{ plaintext }}</pre>
+    <button class="btn btn-secondary align-start" type="button" data-copy="#plaintext">Скопировать текст</button>
+    <p class="footnote">Текст показан только на этой загрузке страницы. Ссылка останется активной до истечения срока хранения — просто введите ключ снова.</p>
+</section>
+{% endblock %}

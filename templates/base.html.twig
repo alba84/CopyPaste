@@ -3,14 +3,17 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5ead8">
     <title>{% block title %}CopyPaste{% endblock %}</title>
     <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
 </head>
 <body>
-<main class="container">
-    <header><a class="brand" href="{{ path('app_home') }}">CopyPaste</a></header>
-    {% block body %}{% endblock %}
-</main>
-{% block javascripts %}{% endblock %}
+<div class="site-shell">
+    <nav class="nav" aria-label="Основная навигация">
+        <a class="nav-brand" href="{{ path('app_home') }}">CopyPaste</a>
+    </nav>
+    <main class="page">{% block body %}{% endblock %}</main>
+</div>
+{% block javascripts %}<script src="{{ asset('copy.js') }}" defer></script>{% endblock %}
 </body>
 </html>

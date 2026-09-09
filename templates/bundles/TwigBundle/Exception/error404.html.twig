@@ -1,1 +1,10 @@
-{% extends 'base.html.twig' %}{% block title %}Запись не найдена — CopyPaste{% endblock %}{% block body %}<section class="card"><h1>Запись недоступна</h1><p>Запись не найдена или срок её хранения истёк</p><a href="{{ path('app_home') }}">Создать новую запись</a></section>{% endblock %}
+{% extends 'base.html.twig' %}
+{% block title %}Ссылка недействительна — CopyPaste{% endblock %}
+{% block body %}
+<section class="card empty-state" aria-labelledby="not-found-title">
+    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
+    <h1 id="not-found-title">Ссылка недействительна</h1>
+    <p class="lead">Запись не найдена или срок её хранения истёк. Возможно, прошло больше 7 дней с момента отправки, либо ссылка введена с ошибкой.</p>
+    <a class="btn btn-secondary" href="{{ path('app_home') }}">На главную</a>
+</section>
+{% endblock %}

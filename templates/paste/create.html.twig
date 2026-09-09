@@ -1,1 +1,36 @@
-{% extends 'base.html.twig' %}{% block title %}Создать запись — CopyPaste{% endblock %}{% block body %}<section class="card"><h1>Передать текст безопасно</h1><p class="muted">Текст шифруется вашим ключом. Ключ не сохраняется на сервере.</p>{{ form_start(form) }}{{ form_errors(form) }}{{ form_row(form.text) }}{{ form_row(form.hint) }}{{ form_row(form.secret) }}<button type="submit">Зашифровать и получить ссылку</button>{{ form_end(form) }}</section>{% endblock %}
+{% extends 'base.html.twig' %}
+{% block title %}Создать запись — CopyPaste{% endblock %}
+{% block body %}
+<section class="card" aria-labelledby="create-title">
+    <h1 id="create-title">Передать текст безопасно</h1>
+    <p class="lead">Текст шифруется вашим ключом прямо на сервере — сам ключ мы не сохраняем и никому не передаём. Прочитать сообщение сможет только тот, кому вы дадите ключ.</p>
+    {{ form_start(form, {attr: {class: 'paste-form'}}) }}
+        {{ form_errors(form) }}
+        {{ form_row(form.text, {attr: {class: 'input input-textarea', placeholder: 'Вставьте текст, который нужно передать', 'data-character-input': ''}, row_attr: {class: 'field'}, help: '0 / 100 000 символов', help_attr: {class: 'character-count', 'data-character-count': ''}}) }}
+        {{ form_row(form.hint, {label: 'Подсказка — необязательно', attr: {class: 'input', placeholder: 'Например: ключ от VPN'}, row_attr: {class: 'field'}}) }}
+        {{ form_row(form.secret, {attr: {class: 'input', placeholder: 'Придумайте ключ для шифрования'}, row_attr: {class: 'field'}}) }}
+        <button class="btn btn-primary btn-block" type="submit">Зашифровать и получить ссылку</button>
+    {{ form_end(form) }}
+</section>
+<section class="how-it-works" aria-labelledby="how-title">
+    <h2 id="how-title">Как это работает</h2>
+    <div class="steps">
+        <article class="step">
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3"/></svg>
+            <h3>Задайте ключ</h3><p>Придумайте пароль — его будет знать только получатель.</p>
+        </article>
+        <article class="step">
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="3"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <h3>Мы шифруем текст</h3><p>Argon2id и Sodium превращают текст в шифр без ключа не читаемый.</p>
+        </article>
+        <article class="step">
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17H7A5 5 0 017 7h2"/><path d="M15 7h2a5 5 0 010 10h-2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <h3>Отправьте ссылку</h3><p>Скопируйте уникальную ссылку и передайте её любым способом.</p>
+        </article>
+        <article class="step">
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            <h3>Получатель вводит ключ</h3><p>Только с верным ключом текст расшифруется — сервер ключ не хранит.</p>
+        </article>
+    </div>
+</section>
+{% endblock %}

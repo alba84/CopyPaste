@@ -24,6 +24,7 @@ RUN composer install --no-dev --prefer-dist --no-interaction --no-scripts --no-p
 FROM base AS prod
 ENV APP_ENV=prod APP_DEBUG=0
 COPY docker/php/conf.d/prod.ini /usr/local/etc/php/conf.d/99-app.ini
+COPY docker/php/php-fpm.d/prod.conf /usr/local/etc/php-fpm.d/zz-app.conf
 COPY --from=prod-deps /app/vendor /app/vendor
 COPY . /app
 RUN mkdir -p var/cache var/log var/data \
@@ -36,3 +37,4 @@ CMD ["php-fpm"]
 FROM nginx:alpine AS nginx-prod
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY public /app/public
+

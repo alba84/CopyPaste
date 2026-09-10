@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+readonly PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly REMOTE_HOST="${PRODUCTION_HOST:-88.210.53.65}"
+readonly REMOTE_USER="${PRODUCTION_USER:-deploy}"
+readonly REMOTE_APP_DIR="${PRODUCTION_APP_DIR:-/opt/copypaste}"
+readonly SSH_IDENTITY="${PRODUCTION_SSH_KEY:-${HOME}/.ssh/copypaste_deploy}"
+readonly LOCAL_DIR="${PROJECT_DIR}/var/snapshots"
+readonly LOCAL_FILE="${LOCAL_DIR}/production.db"
+readonly SNAPSHOT_NAME="phpstorm-production-${$}.db"
+readonly REMOTE_TARGET="${REMOTE_USER}@${REMOTE_HOST}"
+
+snapshot_php="$(printf "<?php
+\$pdo = new PDO(\"sqlite:/app/var/data/app.db\");
+\$pdo->exec(\"PRAGMA busy_timeout=5000\");
+\$pdo->exec(\"VACUUM INTO '/app/var/data/%s'\");
+" "${SNAPSHOT_NAME}")"
+readonly SNAPSHOT_PHP_BASE64="$(printf '%s' "${snapshot_php}" | base64 -w 0)"
+
+cleanup() {
+    ssh -i "${SSH_IDENTITY}" -o BatchMode=yes "${REMOTE_TARGET}" \
+        "rm -f '${REMOTE_APP_DIR}/exports/${SNAPSHOT_NAME}'" >/dev/null 2>&1 || true
+}
+
+trap cleanup EXIT
+mkdir -p "${LOCAL_DIR}"
+
+ssh -i "${SSH_IDENTITY}" -o BatchMode=yes "${REMOTE_TARGET}" \
+    "cd '${REMOTE_APP_DIR}' &&
+    container_id=\$(docker compose -p copypaste -f compose.prod.yaml ps -q php) &&
+    docker compose -p copypaste -f compose.prod.yaml exec -T php rm -f '/app/var/data/${SNAPSHOT_NAME}' &&
+    printf '%s' '${SNAPSHOT_PHP_BASE64}' | base64 -d | docker compose -p copypaste -f compose.prod.yaml exec -T php php &&
+    mkdir -p exports &&
+    docker cp \"\$container_id:/app/var/data/${SNAPSHOT_NAME}\" 'exports/${SNAPSHOT_NAME}' &&
+    docker compose -p copypaste -f compose.prod.yaml exec -T php rm -f '/app/var/data/${SNAPSHOT_NAME}' &&
+    chmod 600 'exports/${SNAPSHOT_NAME}'"
+
+if [[ -f "${LOCAL_FILE}" ]]; then
+    chmod u+w "${LOCAL_FILE}"
+fi
+
+scp -i "${SSH_IDENTITY}" "${REMOTE_TARGET}:${REMOTE_APP_DIR}/exports/${SNAPSHOT_NAME}" "${LOCAL_FILE}"
+chmod 444 "${LOCAL_FILE}"
+
+docker compose -f "${PROJECT_DIR}/compose.yaml" run --rm php php -r \
+    '$pdo = new PDO("sqlite:/app/var/snapshots/production.db"); $result = $pdo->query("PRAGMA integrity_check")->fetchColumn(); if ("ok" !== $result) { fwrite(STDERR, "Snapshot integrity check failed\\n"); exit(1); }'
+
+printf 'Production snapshot saved to %s\n' "${LOCAL_FILE}"

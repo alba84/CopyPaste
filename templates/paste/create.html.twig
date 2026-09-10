@@ -7,7 +7,7 @@
     {{ form_start(form, {attr: {class: 'paste-form'}}) }}
         {{ form_errors(form) }}
         {{ form_row(form.text, {attr: {class: 'input input-textarea', placeholder: 'Вставьте текст, который нужно передать', 'data-character-input': ''}, row_attr: {class: 'field'}, help: '0 / 100 000 символов', help_attr: {class: 'character-count', 'data-character-count': ''}}) }}
-        {{ form_row(form.hint, {label: 'Подсказка — необязательно', attr: {class: 'input', placeholder: 'Например: ключ от VPN'}, row_attr: {class: 'field'}}) }}
+        {{ form_row(form.hint, {label: 'Подсказка — необязательно', attr: {class: 'input', placeholder: 'Например: Кличка твоей первой собаки'}, row_attr: {class: 'field'}}) }}
         {{ form_row(form.secret, {attr: {class: 'input', placeholder: 'Придумайте ключ для шифрования'}, row_attr: {class: 'field'}}) }}
         <button class="btn btn-primary btn-block" type="submit">Зашифровать и получить ссылку</button>
     {{ form_end(form) }}

@@ -49,7 +49,7 @@ final class SodiumCryptographyTest extends TestCase
         $result = $this->cryptography->decrypt($payload, SecretKey::fromString(self::SECRET_KEY));
 
         self::assertInstanceOf(DecryptedPlaintext::class, $result);
-        self::assertSame($plaintext, $result->plaintext->value);
+        self::assertSame($plaintext, $result->plaintext);
     }
 
     public function testEncryptUsesStandardSaltAndNonceLengths(): void
@@ -97,6 +97,17 @@ final class SodiumCryptographyTest extends TestCase
         $result = $this->cryptography->decrypt($payload, SecretKey::fromString(self::SECRET_KEY));
 
         self::assertInstanceOf(DecryptedPlaintext::class, $result);
-        self::assertSame($plaintext, $result->plaintext->value);
+        self::assertSame($plaintext, $result->plaintext);
+    }
+
+    public function testEmptyPlaintextEncryptedByLegacyServiceIsDecryptedAsSuccess(): void
+    {
+        $legacyPayload = $this->legacyEncryption->encrypt('', self::SECRET_KEY);
+        $payload = new EncryptedPayload($legacyPayload->salt, $legacyPayload->nonce, $legacyPayload->ciphertext);
+
+        $result = $this->cryptography->decrypt($payload, SecretKey::fromString(self::SECRET_KEY));
+
+        self::assertInstanceOf(DecryptedPlaintext::class, $result);
+        self::assertSame('', $result->plaintext);
     }
 }

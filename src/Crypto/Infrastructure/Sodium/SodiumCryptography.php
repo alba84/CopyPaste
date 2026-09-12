@@ -49,7 +49,7 @@ final class SodiumCryptography implements Cryptography
             return DecryptionFailed::invalidKey();
         }
 
-        return new DecryptedPlaintext(Plaintext::fromString($plaintext));
+        return new DecryptedPlaintext($plaintext);
     }
 
     private function deriveKey(string $secret, string $salt): string

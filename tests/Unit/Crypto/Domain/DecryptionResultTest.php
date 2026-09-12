@@ -7,18 +7,23 @@ namespace App\Tests\Unit\Crypto\Domain;
 use App\Crypto\Domain\DecryptedPlaintext;
 use App\Crypto\Domain\DecryptionFailed;
 use App\Crypto\Domain\DecryptionResult;
-use App\Secret\Domain\Model\Plaintext;
 use PHPUnit\Framework\TestCase;
 
 final class DecryptionResultTest extends TestCase
 {
-    public function testDecryptedPlaintextCarriesPlaintext(): void
+    public function testDecryptedPlaintextCarriesRawString(): void
     {
-        $plaintext = Plaintext::fromString('Полученный текст');
-        $result = new DecryptedPlaintext($plaintext);
+        $result = new DecryptedPlaintext('Полученный текст');
 
         self::assertInstanceOf(DecryptionResult::class, $result);
-        self::assertSame($plaintext, $result->plaintext);
+        self::assertSame('Полученный текст', $result->plaintext);
+    }
+
+    public function testDecryptedPlaintextAllowsEmptyString(): void
+    {
+        $result = new DecryptedPlaintext('');
+
+        self::assertSame('', $result->plaintext);
     }
 
     public function testDecryptionFailedRepresentsInvalidKey(): void

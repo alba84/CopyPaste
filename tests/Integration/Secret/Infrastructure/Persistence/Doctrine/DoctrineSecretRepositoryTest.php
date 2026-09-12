@@ -54,7 +54,7 @@ final class DoctrineSecretRepositoryTest extends KernelTestCase
         $this->repository->save($secret);
 
         $row = $this->connection->fetchAssociative(
-            'SELECT token, hint, salt, nonce, ciphertext, created_at, expires_at FROM paste WHERE token = :token',
+            'SELECT token, hint, salt, nonce, ciphertext, created_at, expires_at FROM secret WHERE token = :token',
             ['token' => self::TOKEN],
         );
 
@@ -109,7 +109,7 @@ final class DoctrineSecretRepositoryTest extends KernelTestCase
         $createdAt = new DateTimeImmutable('2026-04-01 09:00:00');
         $expiresAt = new DateTimeImmutable('2026-04-08 09:00:00');
 
-        $this->connection->insert('paste', [
+        $this->connection->insert('secret', [
             'token' => self::RAW_TOKEN,
             'hint' => null,
             'salt' => $salt,

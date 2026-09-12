@@ -50,7 +50,7 @@ final class DoctrineSecretRepositoryMaintenanceTest extends TestCase
         self::assertSame([
             'PRAGMA journal_mode=WAL',
             'PRAGMA busy_timeout=5000',
-            'DELETE FROM paste WHERE expires_at <= :now',
+            'DELETE FROM secret WHERE expires_at <= :now',
             'PRAGMA incremental_vacuum',
         ], $statements);
         self::assertSame(['now' => $now], $deleteParams);
@@ -79,7 +79,7 @@ final class DoctrineSecretRepositoryMaintenanceTest extends TestCase
         self::assertSame([
             'PRAGMA journal_mode=WAL',
             'PRAGMA busy_timeout=5000',
-            'DELETE FROM paste WHERE expires_at <= :now',
+            'DELETE FROM secret WHERE expires_at <= :now',
         ], $statements);
     }
 }

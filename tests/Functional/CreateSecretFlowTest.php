@@ -215,7 +215,7 @@ final class CreateSecretFlowTest extends WebTestCase
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
 
-        $count = $entityManager->getConnection()->fetchOne('SELECT COUNT(*) FROM paste');
+        $count = $entityManager->getConnection()->fetchOne('SELECT COUNT(*) FROM secret');
         self::assertIsInt($count);
 
         return $count;

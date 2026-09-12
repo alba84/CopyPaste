@@ -13,13 +13,14 @@ services:
     App\:
         resource: '../src/'
         exclude:
-            - '../src/Entity/'
             - '../src/Kernel.php'
             - '../src/Secret/Domain/Model/'
             - '../src/Secret/Domain/Event/'
             - '../src/Secret/Domain/Exception/'
             - '../src/Crypto/Domain/'
             - '../src/Secret/Infrastructure/Persistence/Doctrine/SecretRecord.php'
+            - '../src/Secret/Infrastructure/Persistence/Doctrine/Schema/'
+            - '../src/Secret/Presentation/Http/SecretCreatedView.php'
     App\Secret\Domain\Model\Ttl:
         factory: ['App\Secret\Domain\Model\Ttl', 'fromDays']
         arguments: ['%app.secret_ttl_days%']

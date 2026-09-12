@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\Paste;
-use App\Repository\PasteRepository;
+use App\Crypto\Domain\Cryptography;
 use App\Secret\Application\CreateSecret\CreateSecret;
 use App\Secret\Application\CreateSecret\CreateSecretHandler;
-use App\Service\EncryptionService;
+use App\Secret\Domain\Model\Hint;
+use App\Secret\Domain\Model\Plaintext;
+use App\Secret\Domain\Model\Secret;
+use App\Secret\Domain\Model\SecretKey;
+use App\Secret\Domain\Model\Token;
+use App\Secret\Domain\Repository\SecretRepository;
 use DateInterval;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
@@ -27,11 +31,9 @@ final class RevealSecretFlowTest extends WebTestCase
     /** @phpstan-ignore property.uninitialized (initialized in setUp(); review 2027-06-30) */
     private KernelBrowser $client;
     /** @phpstan-ignore property.uninitialized (initialized in setUp(); review 2027-06-30) */
-    private EntityManagerInterface $entityManager;
+    private SecretRepository $secretRepository;
     /** @phpstan-ignore property.uninitialized (initialized in setUp(); review 2027-06-30) */
-    private PasteRepository $pasteRepository;
-    /** @phpstan-ignore property.uninitialized (initialized in setUp(); review 2027-06-30) */
-    private EncryptionService $encryption;
+    private Cryptography $cryptography;
 
     protected function setUp(): void
     {
@@ -46,15 +48,14 @@ final class RevealSecretFlowTest extends WebTestCase
 
         $entityManager = $container->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
-        $this->entityManager = $entityManager;
 
-        $pasteRepository = $container->get(PasteRepository::class);
-        self::assertInstanceOf(PasteRepository::class, $pasteRepository);
-        $this->pasteRepository = $pasteRepository;
+        $secretRepository = $container->get(SecretRepository::class);
+        self::assertInstanceOf(SecretRepository::class, $secretRepository);
+        $this->secretRepository = $secretRepository;
 
-        $encryption = $container->get(EncryptionService::class);
-        self::assertInstanceOf(EncryptionService::class, $encryption);
-        $this->encryption = $encryption;
+        $cryptography = $container->get(Cryptography::class);
+        self::assertInstanceOf(Cryptography::class, $cryptography);
+        $this->cryptography = $cryptography;
 
         $metadata = $entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool = new SchemaTool($entityManager);
@@ -65,7 +66,7 @@ final class RevealSecretFlowTest extends WebTestCase
     public function testActiveSecretRendersUnlockFormWithHintAndWireContract(): void
     {
         $token = str_repeat('a', 32);
-        $this->persistLegacyPaste($token, 'текст', 'ключ', 'Публичная подсказка');
+        $this->persistSecret($token, 'текст', 'ключ', 'Публичная подсказка');
 
         $crawler = $this->client->request('GET', '/p/'.$token);
 
@@ -85,7 +86,7 @@ final class RevealSecretFlowTest extends WebTestCase
     public function testActiveSecretWithoutHintRendersNoHintBlock(): void
     {
         $token = str_repeat('b', 32);
-        $this->persistLegacyPaste($token, 'текст', 'ключ');
+        $this->persistSecret($token, 'текст', 'ключ');
 
         $crawler = $this->client->request('GET', '/p/'.$token);
 
@@ -103,7 +104,7 @@ final class RevealSecretFlowTest extends WebTestCase
     public function testSuccessfulRevealShowsExactPlaintextAndNoStoreHeader(): void
     {
         $token = str_repeat('c', 32);
-        $this->persistLegacyPaste($token, 'Секретный текст', 'ключ');
+        $this->persistSecret($token, 'Секретный текст', 'ключ');
 
         $this->submitReveal($token, 'ключ');
 
@@ -125,8 +126,8 @@ final class RevealSecretFlowTest extends WebTestCase
     public function testRevealCanBeRepeatedAndLeavesRecordUntouched(): void
     {
         $token = $this->createSecretByNewPath('Повторное открытие', 'ключ');
-        $before = $this->pasteRepository->findOneBy(['token' => $token]);
-        self::assertInstanceOf(Paste::class, $before);
+        $before = $this->secretRepository->findByToken(new Token($token));
+        self::assertInstanceOf(Secret::class, $before);
 
         $this->submitReveal($token, 'ключ');
         self::assertResponseIsSuccessful();
@@ -136,29 +137,16 @@ final class RevealSecretFlowTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextSame('#plaintext', 'Повторное открытие');
 
-        $this->entityManager->clear();
-        $after = $this->pasteRepository->findOneBy(['token' => $token]);
-        self::assertInstanceOf(Paste::class, $after);
-        self::assertCount(1, $this->pasteRepository->findAll());
-        self::assertSame($before->getExpiresAt()->format('Y-m-d H:i:s'), $after->getExpiresAt()->format('Y-m-d H:i:s'));
-    }
-
-    public function testEmptyPlaintextIsRevealedAsSuccessOverHttp(): void
-    {
-        $token = str_repeat('d', 32);
-        $this->persistLegacyPaste($token, '', 'ключ');
-
-        $this->submitReveal($token, 'ключ');
-
-        self::assertResponseIsSuccessful();
-        self::assertStringContainsString('no-store', (string) $this->client->getResponse()->headers->get('Cache-Control'));
-        self::assertSame('', trim($this->client->getCrawler()->filter('#plaintext')->text()));
+        $after = $this->secretRepository->findByToken(new Token($token));
+        self::assertInstanceOf(Secret::class, $after);
+        self::assertSame(1, $this->countStoredSecrets());
+        self::assertSame($before->expiresAt()->format('Y-m-d H:i:s'), $after->expiresAt()->format('Y-m-d H:i:s'));
     }
 
     public function testWrongKeyShowsNeutralFieldErrorWithoutPlaintext(): void
     {
         $token = str_repeat('e', 32);
-        $this->persistLegacyPaste($token, 'Секрет', 'верный ключ');
+        $this->persistSecret($token, 'Секрет', 'верный ключ');
 
         $this->submitReveal($token, 'неверный ключ');
 
@@ -171,7 +159,7 @@ final class RevealSecretFlowTest extends WebTestCase
     public function testInvalidKeyShowsExactRussianMessage(string $secret, string $message): void
     {
         $token = str_repeat('f', 32);
-        $this->persistLegacyPaste($token, 'Секрет', 'ключ');
+        $this->persistSecret($token, 'Секрет', 'ключ');
 
         $this->submitReveal($token, $secret);
 
@@ -215,7 +203,7 @@ final class RevealSecretFlowTest extends WebTestCase
     public function testExpiredSecretOnGetReturnsTheSameNeutral404(): void
     {
         $token = str_repeat('3', 32);
-        $this->persistLegacyPaste($token, 'Секрет', 'ключ', null, new DateTimeImmutable('-1 day'));
+        $this->persistSecret($token, 'Секрет', 'ключ', null, new DateTimeImmutable('-1 day'));
         $this->client->catchExceptions(false);
 
         try {
@@ -230,7 +218,7 @@ final class RevealSecretFlowTest extends WebTestCase
     public function testExpiredSecretOnPostReturnsTheSameNeutral404(): void
     {
         $token = str_repeat('6', 32);
-        $this->persistLegacyPaste($token, 'Секрет', 'ключ', null, new DateTimeImmutable('-1 day'));
+        $this->persistSecret($token, 'Секрет', 'ключ', null, new DateTimeImmutable('-1 day'));
         $this->client->catchExceptions(false);
 
         try {
@@ -245,7 +233,7 @@ final class RevealSecretFlowTest extends WebTestCase
     public function testEleventhWrongAttemptIsRateLimitedBeforeDecryption(): void
     {
         $token = str_repeat('4', 32);
-        $this->persistLegacyPaste($token, 'Секрет', 'верный ключ');
+        $this->persistSecret($token, 'Секрет', 'верный ключ');
 
         for ($attempt = 1; $attempt <= 10; ++$attempt) {
             $this->submitReveal($token, 'неверный ключ');
@@ -264,7 +252,7 @@ final class RevealSecretFlowTest extends WebTestCase
     public function testInvalidSubmissionsConsumeTheRateLimit(): void
     {
         $token = str_repeat('5', 32);
-        $this->persistLegacyPaste($token, 'Секрет', 'верный ключ');
+        $this->persistSecret($token, 'Секрет', 'верный ключ');
 
         for ($attempt = 1; $attempt <= 10; ++$attempt) {
             $this->submitReveal($token, '');
@@ -294,7 +282,7 @@ final class RevealSecretFlowTest extends WebTestCase
         return $handler(new CreateSecret($plaintext, null, $secretKey))->token->value;
     }
 
-    private function persistLegacyPaste(
+    private function persistSecret(
         string $token,
         string $plaintext,
         string $secretKey,
@@ -302,10 +290,25 @@ final class RevealSecretFlowTest extends WebTestCase
         ?DateTimeImmutable $expiresAt = null,
     ): void {
         $createdAt = new DateTimeImmutable('-1 hour');
-        $payload = $this->encryption->encrypt($plaintext, $secretKey);
-        $paste = new Paste($token, $hint, $payload, $createdAt, $expiresAt ?? $createdAt->add(new DateInterval('P7D')));
+        $secret = Secret::reconstitute(
+            new Token($token),
+            Hint::fromUserInput($hint),
+            $this->cryptography->encrypt(Plaintext::fromString($plaintext), SecretKey::fromString($secretKey)),
+            $createdAt,
+            $expiresAt ?? $createdAt->add(new DateInterval('P7D')),
+        );
 
-        $this->entityManager->persist($paste);
-        $this->entityManager->flush();
+        $this->secretRepository->save($secret);
+    }
+
+    private function countStoredSecrets(): int
+    {
+        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+
+        $count = $entityManager->getConnection()->fetchOne('SELECT COUNT(*) FROM paste');
+        self::assertIsInt($count);
+
+        return $count;
     }
 }

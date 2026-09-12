@@ -16,6 +16,7 @@ use App\Secret\Infrastructure\Persistence\Doctrine\DoctrineSecretRepository;
 use App\Secret\Infrastructure\Token\RandomTokenGenerator;
 use App\Secret\Presentation\Http\Form\CreateSecretType;
 use App\Secret\Presentation\Http\Form\RevealSecretType;
+use App\Secret\Presentation\Http\SecretCreatedController;
 use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -87,5 +88,24 @@ final class SecretWiringTest extends KernelTestCase
         self::assertInstanceOf(RouterInterface::class, $router);
 
         self::assertSame('/p/'.str_repeat('a', 32), $router->generate('app_paste_view', ['token' => str_repeat('a', 32)]));
+    }
+
+    public function testCreatedRouteKeepsLegacyNameAndUrl(): void
+    {
+        self::bootKernel();
+        $router = self::getContainer()->get('router');
+        self::assertInstanceOf(RouterInterface::class, $router);
+
+        $token = str_repeat('a', 32);
+        self::assertSame('/created/'.$token, $router->generate('app_paste_created', ['token' => $token]));
+
+        $route = $router->getRouteCollection()->get('app_paste_created');
+        self::assertNotNull($route);
+        self::assertSame('/created/{token}', $route->getPath());
+        self::assertSame(['GET'], $route->getMethods());
+        self::assertSame('[a-f0-9]{32}', $route->getRequirement('token'));
+        $controller = $route->getDefault('_controller');
+        self::assertIsString($controller);
+        self::assertStringStartsWith(SecretCreatedController::class, $controller);
     }
 }

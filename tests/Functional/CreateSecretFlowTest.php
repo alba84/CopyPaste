@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\Paste;
-use App\Repository\PasteRepository;
-use App\Service\EncryptionService;
+use App\Crypto\Domain\Cryptography;
+use App\Crypto\Domain\DecryptedPlaintext;
+use App\Secret\Domain\Model\Secret;
+use App\Secret\Domain\Model\SecretKey;
+use App\Secret\Domain\Model\Token;
+use App\Secret\Domain\Repository\SecretRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -21,9 +24,9 @@ final class CreateSecretFlowTest extends WebTestCase
     /** @phpstan-ignore property.uninitialized (initialized in setUp(); review 2027-06-30) */
     private KernelBrowser $client;
     /** @phpstan-ignore property.uninitialized (initialized in setUp(); review 2027-06-30) */
-    private PasteRepository $pasteRepository;
+    private SecretRepository $secretRepository;
     /** @phpstan-ignore property.uninitialized (initialized in setUp(); review 2027-06-30) */
-    private EncryptionService $encryption;
+    private Cryptography $cryptography;
 
     protected function setUp(): void
     {
@@ -38,13 +41,13 @@ final class CreateSecretFlowTest extends WebTestCase
         $entityManager = $container->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
 
-        $pasteRepository = $container->get(PasteRepository::class);
-        self::assertInstanceOf(PasteRepository::class, $pasteRepository);
-        $this->pasteRepository = $pasteRepository;
+        $secretRepository = $container->get(SecretRepository::class);
+        self::assertInstanceOf(SecretRepository::class, $secretRepository);
+        $this->secretRepository = $secretRepository;
 
-        $encryption = $container->get(EncryptionService::class);
-        self::assertInstanceOf(EncryptionService::class, $encryption);
-        $this->encryption = $encryption;
+        $cryptography = $container->get(Cryptography::class);
+        self::assertInstanceOf(Cryptography::class, $cryptography);
+        $this->cryptography = $cryptography;
 
         $metadata = $entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool = new SchemaTool($entityManager);
@@ -126,20 +129,20 @@ final class CreateSecretFlowTest extends WebTestCase
     {
         $token = $this->createAndReturnToken(['hint' => $hint]);
 
-        $paste = $this->pasteRepository->findOneBy(['token' => $token]);
+        $secret = $this->secretRepository->findByToken(new Token($token));
 
-        self::assertInstanceOf(Paste::class, $paste);
-        self::assertNull($paste->getHint());
+        self::assertInstanceOf(Secret::class, $secret);
+        self::assertNull($secret->hint());
     }
 
     public function testNonBlankHintIsPersisted(): void
     {
         $token = $this->createAndReturnToken(['hint' => 'Подсказка получателю']);
 
-        $paste = $this->pasteRepository->findOneBy(['token' => $token]);
+        $secret = $this->secretRepository->findByToken(new Token($token));
 
-        self::assertInstanceOf(Paste::class, $paste);
-        self::assertSame('Подсказка получателю', $paste->getHint());
+        self::assertInstanceOf(Secret::class, $secret);
+        self::assertSame('Подсказка получателю', $secret->hint()?->value);
     }
 
     public function testEleventhRequestIsRateLimitedAndCreatesNoExtraRecord(): void
@@ -149,18 +152,18 @@ final class CreateSecretFlowTest extends WebTestCase
             self::assertResponseStatusCodeSame(302);
         }
 
-        self::assertCount(10, $this->pasteRepository->findAll());
+        self::assertSame(10, $this->countStoredSecrets());
 
         $this->submitForm(['text' => 'одиннадцатый']);
 
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorTextContains('body', 'Слишком много запросов. Попробуйте через минуту.');
-        self::assertCount(10, $this->pasteRepository->findAll());
+        self::assertSame(10, $this->countStoredSecrets());
     }
 
-    public function testCreatedSecretIsReadableAndDecryptableByLegacyPath(): void
+    public function testCreatedSecretIsReadableAndDecryptableThroughSecretRepository(): void
     {
-        $plaintext = 'Текст, который должен прочитать легаси Reveal';
+        $plaintext = 'Текст, который должен прочитать SecretRepository';
         $secretKey = 'секретный ключ';
         $token = $this->createAndReturnToken([
             'text' => $plaintext,
@@ -168,11 +171,13 @@ final class CreateSecretFlowTest extends WebTestCase
             'secret' => $secretKey,
         ]);
 
-        $paste = $this->pasteRepository->findOneBy(['token' => $token]);
+        $secret = $this->secretRepository->findByToken(new Token($token));
 
-        self::assertInstanceOf(Paste::class, $paste);
-        self::assertSame('Подсказка', $paste->getHint());
-        self::assertSame($plaintext, $this->encryption->decrypt($paste->getEncryptedPayload(), $secretKey));
+        self::assertInstanceOf(Secret::class, $secret);
+        self::assertSame('Подсказка', $secret->hint()?->value);
+        $decrypted = $this->cryptography->decrypt($secret->payload(), SecretKey::fromString($secretKey));
+        self::assertInstanceOf(DecryptedPlaintext::class, $decrypted);
+        self::assertSame($plaintext, $decrypted->plaintext);
     }
 
     /**
@@ -203,5 +208,16 @@ final class CreateSecretFlowTest extends WebTestCase
         self::assertNotSame('', $token);
 
         return $token;
+    }
+
+    private function countStoredSecrets(): int
+    {
+        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+
+        $count = $entityManager->getConnection()->fetchOne('SELECT COUNT(*) FROM paste');
+        self::assertIsInt($count);
+
+        return $count;
     }
 }

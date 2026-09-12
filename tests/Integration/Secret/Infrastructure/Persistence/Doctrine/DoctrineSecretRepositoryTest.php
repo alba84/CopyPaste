@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Secret\Infrastructure\Persistence\Doctrine;
 
-use App\Entity\Paste;
-use App\Repository\PasteRepository;
 use App\Secret\Domain\Model\EncryptedPayload;
 use App\Secret\Domain\Model\Hint;
 use App\Secret\Domain\Model\Secret;
@@ -101,24 +99,6 @@ final class DoctrineSecretRepositoryTest extends KernelTestCase
 
         self::assertTrue($this->repository->tokenExists(new Token(self::TOKEN)));
         self::assertFalse($this->repository->tokenExists(new Token(self::RAW_TOKEN)));
-    }
-
-    public function testSaveIsReadableByLegacyRepository(): void
-    {
-        $secret = $this->newSecret();
-
-        $this->repository->save($secret);
-
-        $pasteRepository = self::getContainer()->get(PasteRepository::class);
-        self::assertInstanceOf(PasteRepository::class, $pasteRepository);
-        $paste = $pasteRepository->findOneBy(['token' => self::TOKEN]);
-
-        self::assertInstanceOf(Paste::class, $paste);
-        self::assertSame('подсказка', $paste->getHint());
-        $legacyPayload = $paste->getEncryptedPayload();
-        self::assertSame($secret->payload()->salt, $legacyPayload->salt);
-        self::assertSame($secret->payload()->nonce, $legacyPayload->nonce);
-        self::assertSame($secret->payload()->ciphertext, $legacyPayload->ciphertext);
     }
 
     public function testFindByTokenReadsBinaryColumnsWithNullBytes(): void

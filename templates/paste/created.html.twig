@@ -5,7 +5,7 @@
     <h1 id="created-title">Ссылка готова</h1>
     <p class="lead">Скопируйте ссылку и отправьте её получателю. Ключ передайте отдельно — например, голосом или в другом канале.</p>
     <div class="field"><label for="paste-url">Ссылка для получателя</label><div class="copy-row"><input class="input" id="paste-url" readonly value="{{ paste_url }}"><button class="btn btn-secondary" type="button" data-copy="#paste-url">Скопировать</button></div></div>
-    <div class="notice notice-success"><svg class="notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Ссылка действует до {{ paste.expiresAt|date('d.m.Y, H:i') }} — после этого запись будет удалена автоматически.</span></div>
+    <div class="notice notice-success"><svg class="notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Ссылка действует до {{ created.expiresAt|date('d.m.Y, H:i') }} — после этого запись будет удалена автоматически.</span></div>
     <div class="tags" aria-label="Защита записи"><span class="tag tag-accent">Argon2id + Sodium</span><span class="tag tag-success">Ключ не передаётся через сервер</span></div>
 </section>
 {% endblock %}

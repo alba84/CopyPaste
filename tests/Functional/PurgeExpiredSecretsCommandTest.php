@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Repository\PasteRepository;
 use App\Schedule;
 use App\Secret\Domain\Model\EncryptedPayload;
 use App\Secret\Domain\Model\Secret;
@@ -14,7 +13,6 @@ use DateInterval;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
-use ReflectionClass;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
@@ -66,10 +64,10 @@ final class PurgeExpiredSecretsCommandTest extends KernelTestCase
         self::assertSame(Command::SUCCESS, $tester->getStatusCode());
     }
 
-    public function testLegacyPurgeCommandAndRepositoryMethodAreGone(): void
+    public function testLegacyPurgeCommandAndRepositoryAreGone(): void
     {
         self::assertFalse(class_exists(self::LEGACY_COMMAND));
-        self::assertFalse((new ReflectionClass(PasteRepository::class))->hasMethod('purgeExpired'));
+        self::assertFalse(class_exists('App\\Repository\\PasteRepository'));
     }
 
     public function testScheduleStillRunsPurgeCommandHourly(): void

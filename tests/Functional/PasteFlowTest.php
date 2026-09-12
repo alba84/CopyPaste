@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Dto\EncryptedPayload;
-use App\Entity\Paste;
+use App\Secret\Domain\Model\EncryptedPayload;
+use App\Secret\Domain\Model\Secret;
+use App\Secret\Domain\Model\Token;
+use App\Secret\Domain\Repository\SecretRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
@@ -80,9 +82,11 @@ final class PasteFlowTest extends WebTestCase
         self::assertResponseStatusCodeSame(404);
 
         $payload = new EncryptedPayload(str_repeat('s', SODIUM_CRYPTO_PWHASH_SALTBYTES), str_repeat('n', SODIUM_CRYPTO_SECRETBOX_NONCEBYTES), 'ciphertext');
-        $paste = new Paste(str_repeat('b', 32), null, $payload, new DateTimeImmutable('-2 days'), new DateTimeImmutable('-1 day'));
-        $this->entityManager->persist($paste);
-        $this->entityManager->flush();
+        $secret = Secret::reconstitute(new Token(str_repeat('b', 32)), null, $payload, new DateTimeImmutable('-2 days'), new DateTimeImmutable('-1 day'));
+
+        $repository = self::getContainer()->get(SecretRepository::class);
+        self::assertInstanceOf(SecretRepository::class, $repository);
+        $repository->save($secret);
 
         $this->client->request('GET', '/p/'.str_repeat('b', 32));
         self::assertResponseStatusCodeSame(404);

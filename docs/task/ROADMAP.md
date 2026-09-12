@@ -35,7 +35,7 @@
 |---|---|---|---|---|
 | `001` | `[x]` | quality-tooling-bootstrap (QA-набор, PHPStan L10, deptrac as-is) | — | — |
 | `002` | `[x]` | extract-create-secret — **эталонный срез** | 001 | крипто-формат; стратегия персистентности; deptrac целевые слои |
-| `003` | `[ ]` | extract-reveal-secret | 002 | безопасность (no-store, нейтральные ошибки, burn-after-reading) |
+| `003` | `[x]` | extract-reveal-secret | 002 | безопасность (no-store, нейтральные ошибки) |
 | `004` | `[ ]` | extract-purge-expired-secrets | 002 | — |
 | `005` | `[ ]` | remove-legacy-paste + целевой deptrac | 003, 004 | удаление легаси, смена стандарта границ → ADR |
 | `006` | `[ ]` | extract-access-rate-limiting (контекст `Access`) | 004, 005 | изменение лимитов/квот |
@@ -64,9 +64,14 @@
 
 ### 003 — extract-reveal-secret
 
-- Use case `RevealSecret` с типизированным результатом `Revealed|InvalidKey`.
-- Burn-after-reading, `Cache-Control: no-store`, нейтральные сообщения.
-- Перенос `UnlockPasteType`/`UnlockPasteData`; `PasteController::view` тонкий.
+- Use case `RevealSecret` с типизированным результатом
+  `Revealed | InvalidKey | NotFound`; «нет записи» и «истекло» → единый
+  нейтральный `404`.
+- `Cache-Control: no-store`, нейтральные сообщения; wire-контракт
+  `unlock_paste` сохранён.
+- Перенос `UnlockPasteType`/`UnlockPasteData`; `PasteController::view` удаляется.
+- **Burn-after-reading — вне объёма 003** (сейчас не реализован; выносится в
+  отдельную задачу + ADR с миграцией БД, G1 задачи 003 Q1-A).
 
 ### 004 — extract-purge-expired-secrets
 
@@ -107,3 +112,6 @@
 | — | 002 | Roadmap создан, задача передана аналитику (G1) |
 | — | 002 | G1 утверждён (Q1–Q6, все A); G2 утверждён (public plan.md + ADR 0002); в работе |
 | — | 002 | Реализовано (Ш1–Ш10), `make qa`/`make coverage`/`schema:validate` зелёные; ревью `approved`; коммит выполнен |
+| — | 003 | G1 утверждён (Q1–Q7, все A; burn-after-reading вне объёма); в работе |
+| — | 003 | G2 утверждён (plan.md + query `LoadRevealSecret`); в работе |
+| — | 003 | Реализовано (Ш1–Ш4), `make qa`/`make coverage`/`schema:validate` зелёные; ревью `approved`; коммит выполнен |

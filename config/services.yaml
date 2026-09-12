@@ -7,8 +7,6 @@ services:
         bind:
             $configuredOpsLimit: '%env(int:APP_KDF_OPSLIMIT)%'
             $configuredMemLimit: '%env(int:APP_KDF_MEMLIMIT)%'
-            $createPasteLimiter: '@limiter.create_paste'
-            $unlockPasteLimiter: '@limiter.unlock_paste'
             Psr\Clock\ClockInterface: '@clock'
     App\:
         resource: '../src/'
@@ -18,6 +16,7 @@ services:
             - '../src/Secret/Domain/Event/'
             - '../src/Secret/Domain/Exception/'
             - '../src/Crypto/Domain/'
+            - '../src/Access/Domain/'
             - '../src/Secret/Infrastructure/Persistence/Doctrine/SecretRecord.php'
             - '../src/Secret/Infrastructure/Persistence/Doctrine/Schema/'
             - '../src/Secret/Presentation/Http/SecretCreatedView.php'
@@ -27,3 +26,8 @@ services:
     App\Secret\Domain\Repository\SecretRepository: '@App\Secret\Infrastructure\Persistence\Doctrine\DoctrineSecretRepository'
     App\Secret\Domain\Service\TokenGenerator: '@App\Secret\Infrastructure\Token\RandomTokenGenerator'
     App\Crypto\Domain\Cryptography: '@App\Crypto\Infrastructure\Sodium\SodiumCryptography'
+    App\Access\Domain\AccessLimiter: '@App\Access\Infrastructure\Symfony\SymfonyAccessLimiter'
+    App\Access\Infrastructure\Symfony\SymfonyAccessLimiter:
+        arguments:
+            $createSecretLimiter: '@limiter.create_paste'
+            $revealSecretLimiter: '@limiter.unlock_paste'

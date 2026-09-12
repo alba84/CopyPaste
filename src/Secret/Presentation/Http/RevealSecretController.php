@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Secret\Presentation\Http;
 
+use App\Access\Domain\AccessDecision;
+use App\Access\Domain\AccessLimit;
+use App\Access\Domain\AccessLimiter;
 use App\Secret\Application\RevealSecret\LoadRevealSecret;
 use App\Secret\Application\RevealSecret\LoadRevealSecretHandler;
 use App\Secret\Application\RevealSecret\NotFound;
@@ -16,7 +19,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class RevealSecretController extends AbstractController
@@ -27,7 +29,7 @@ final class RevealSecretController extends AbstractController
         Request $request,
         LoadRevealSecretHandler $loadRevealSecret,
         RevealSecretHandler $revealSecret,
-        RateLimiterFactory $unlockPasteLimiter,
+        AccessLimiter $accessLimiter,
     ): Response {
         $view = $loadRevealSecret(new LoadRevealSecret($token));
         if ($view instanceof NotFound) {
@@ -40,7 +42,7 @@ final class RevealSecretController extends AbstractController
 
         if ($form->isSubmitted()) {
             $key = ($request->getClientIp() ?? 'unknown').':'.$token;
-            if (!$unlockPasteLimiter->create($key)->consume()->isAccepted()) {
+            if (AccessDecision::Rejected === $accessLimiter->consume(AccessLimit::RevealSecret, $key)) {
                 $form->addError(new FormError('Слишком много попыток. Попробуйте через минуту.'));
             } elseif ($form->isValid()) {
                 $result = $revealSecret(new RevealSecret($token, $input->secret));

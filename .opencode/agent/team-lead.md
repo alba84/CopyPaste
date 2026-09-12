@@ -9,9 +9,9 @@ permission:
   edit: allow
   bash:
     "*": allow
-    "git commit*": deny
+    "git commit*": allow
     "git push*": deny
-    "git reset --hard*": deny
+    "git reset --hard*": allow
     "rm -rf *": deny
   task: allow
   question: allow

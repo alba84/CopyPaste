@@ -37,9 +37,10 @@
 | `002` | `[x]` | extract-create-secret — **эталонный срез** | 001 | крипто-формат; стратегия персистентности; deptrac целевые слои |
 | `003` | `[x]` | extract-reveal-secret | 002 | безопасность (no-store, нейтральные ошибки) |
 | `004` | `[x]` | extract-purge-expired-secrets | 002 | — |
-| `005` | `[ ]` | remove-legacy-paste + целевой deptrac | 003, 004 | удаление легаси, смена стандарта границ → ADR |
-| `006` | `[ ]` | extract-access-rate-limiting (контекст `Access`) | 004, 005 | изменение лимитов/квот |
-| `007` | `[ ]` | finalize-architecture-docs (as-is, глоссарий, ADR, changelog) | 005, 006 | правка `docs/ARCHITECTURE.md` |
+| `005` | `[x]` | remove-legacy-paste (005a) — без миграции | 003, 004 | удаление легаси; целевой deptrac |
+| `006` | `[ ]` | rename-paste-table-to-secret (005b) | 005 | миграция БД, переименование таблицы |
+| `007` | `[ ]` | extract-access-rate-limiting (контекст `Access`) | 006 | изменение лимитов/квот |
+| `008` | `[ ]` | finalize-architecture-docs (as-is, глоссарий, changelog) | 007 | правка `docs/ARCHITECTURE.md` |
 
 Легенда статусов задач: `[ ]` не начато, `[~]` в работе (на одном из гейтов),
 `[x]` выполнено.
@@ -78,24 +79,33 @@
 - Use case `PurgeExpiredSecrets` + консольный адаптер.
 - Легаси `PurgeExpiredPastesCommand` и запрос из `PasteRepository` вытесняются.
 
-### 005 — remove-legacy-paste + целевой deptrac
+### 005 — remove-legacy-paste (005a, без миграции)
 
-- Удаление `PasteController`, `Entity\Paste`, `Repository\PasteRepository`,
-  старых `Dto`/`Form`, `Service\EncryptionService`.
-- `deptrac.yaml` переводится на целевые слои без `App\*`-остатков.
-- Обновляется раздел «Текущее состояние» в `docs/ARCHITECTURE.md` (через ADR,
-  если меняется стандарт).
+- Перенос `PasteController::created` (`/created/{token}`) в
+  `Secret/Presentation/Http` на `SecretRepository`; удаление `PasteController`.
+- Удаление `Entity\Paste`, `Repository\PasteRepository`, старых `Dto`/`Form`,
+  `Service\EncryptionService`, `config/services_test.yaml`.
+- Удаление легаси-тестов/перевод интеропа на новый код.
+- `deptrac.yaml` переводится на целевой набор без слоёв `App\*` (через ADR,
+  если это меняет стандарт).
+- **Без изменения схемы БД.**
 
-### 006 — extract-access-rate-limiting
+### 006 — rename-paste-table-to-secret (005b)
+
+- Отдельная миграция `ALTER TABLE paste RENAME TO secret` (данные сохраняются).
+- Обновление `DoctrineSecretRepository`/маппера и ADR 0002/схемы.
+- **Триггер:** миграция БД — подтверждение человека на G1/G2.
+
+### 007 — extract-access-rate-limiting
 
 - Контекст `Access`: порт + адаптер rate limiting, лимиты через
   `config/services.yaml`, интеграция в use case'ы.
-- Легаси-лимитеры из контроллера удаляются.
+- Легаси-лимитеры из контроллеров удаляются.
 
-### 007 — finalize-architecture-docs
+### 008 — finalize-architecture-docs
 
-- Актуализация `docs/ARCHITECTURE.md`, `docs/UBIQUITOUS_LANGUAGE.md`, ADR;
-  changelog-запись для пользовательских изменений.
+- Актуализация `docs/ARCHITECTURE.md` (раздел «Текущее состояние»),
+  `docs/UBIQUITOUS_LANGUAGE.md`, ADR; changelog для пользовательских изменений.
 
 ## Вне объёма миграции
 
@@ -117,3 +127,6 @@
 | — | 003 | Реализовано (Ш1–Ш4), `make qa`/`make coverage`/`schema:validate` зелёные; ревью `approved`; коммит выполнен |
 | — | 004 | G1 утверждён (Q1–Q6, все A); в работе |
 | — | 004 | Реализовано (Ш1–Ш4), `make qa`/`make coverage`/`schema:validate` зелёные; ревью `approved`; коммит выполнен |
+| — | 005/006 | Задача 005 разделена на 005a (remove-legacy-paste) и 005b (rename-paste-table-to-secret, миграция БД) |
+| — | 005 | G1 утверждён (Q1-A: ORM schema-anchor + ADR 0003; Q2–Q6 = A); в работе |
+| — | 005 | G2 утверждён (plan.md + ADR 0003); ревью: B1 (final ORM) исправлен, повторно `approved`; коммит выполнен |

@@ -23,7 +23,7 @@ final readonly class DoctrineSecretRepository implements SecretRepository
     {
         $record = $this->mapper->toRecord($secret);
 
-        $this->connection->insert('paste', [
+        $this->connection->insert('secret', [
             'token' => $record->token,
             'hint' => $record->hint,
             'salt' => $record->salt,
@@ -43,7 +43,7 @@ final readonly class DoctrineSecretRepository implements SecretRepository
     public function findByToken(Token $token): ?Secret
     {
         $row = $this->connection->fetchAssociative(
-            'SELECT token, hint, salt, nonce, ciphertext, created_at, expires_at FROM paste WHERE token = :token',
+            'SELECT token, hint, salt, nonce, ciphertext, created_at, expires_at FROM secret WHERE token = :token',
             ['token' => $token->value],
         );
 
@@ -57,7 +57,7 @@ final readonly class DoctrineSecretRepository implements SecretRepository
     public function tokenExists(Token $token): bool
     {
         return false !== $this->connection->fetchOne(
-            'SELECT 1 FROM paste WHERE token = :token',
+            'SELECT 1 FROM secret WHERE token = :token',
             ['token' => $token->value],
         );
     }
@@ -68,7 +68,7 @@ final readonly class DoctrineSecretRepository implements SecretRepository
         $this->connection->executeStatement('PRAGMA busy_timeout=5000');
 
         $count = (int) $this->connection->executeStatement(
-            'DELETE FROM paste WHERE expires_at <= :now',
+            'DELETE FROM secret WHERE expires_at <= :now',
             ['now' => $now],
             ['now' => Types::DATETIME_IMMUTABLE],
         );

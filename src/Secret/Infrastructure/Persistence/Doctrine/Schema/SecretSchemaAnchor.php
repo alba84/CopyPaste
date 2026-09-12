@@ -8,13 +8,16 @@ use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity, ORM\Table(name: 'paste'), ORM\Index(name: 'idx_paste_expires_at', columns: ['expires_at'])]
-class PasteSchemaAnchor
+#[ORM\Entity]
+#[ORM\Table(name: 'secret')]
+#[ORM\UniqueConstraint(name: 'uniq_secret_token', columns: ['token'])]
+#[ORM\Index(name: 'idx_secret_expires_at', columns: ['expires_at'])]
+class SecretSchemaAnchor
 {
     #[ORM\Id, ORM\GeneratedValue, ORM\Column]
     public ?int $id = null;
 
-    #[ORM\Column(length: 64, unique: true)]
+    #[ORM\Column(length: 64)]
     public string $token = '';
 
     #[ORM\Column(length: 255, nullable: true)]

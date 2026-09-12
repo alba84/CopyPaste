@@ -1,0 +1,20 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "team-lead",
+  "instructions": [
+    "AGENTS.md",
+    "docs/ARCHITECTURE.md",
+    "docs/CONVENTIONS.md",
+    "docs/UBIQUITOUS_LANGUAGE.md"
+  ],
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "git commit*": "ask",
+      "git push*": "deny",
+      "git reset --hard*": "deny",
+      "git rebase*": "deny",
+      "rm -rf *": "deny"
+    }
+  }
+}

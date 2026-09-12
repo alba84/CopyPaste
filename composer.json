@@ -31,8 +31,12 @@
     "dragonmantank/cron-expression": "^3.4"
   },
   "require-dev": {
+    "deptrac/deptrac": "^4.7",
     "friendsofphp/php-cs-fixer": "^3.68",
     "phpstan/phpstan": "^2.1",
+    "phpstan/phpstan-deprecation-rules": "^2.0",
+    "phpstan/phpstan-doctrine": "^2.0",
+    "phpstan/phpstan-strict-rules": "^2.0",
     "phpstan/phpstan-symfony": "^2.0",
     "phpunit/phpunit": "^11.5",
     "symfony/browser-kit": "7.4.*",
@@ -50,6 +54,11 @@
       "cache:clear": "symfony-cmd",
       "assets:install %PUBLIC_DIR%": "symfony-cmd"
     },
+    "cs-check": "php-cs-fixer fix --dry-run --diff",
+    "deptrac": "deptrac analyse",
+    "stan": "phpstan analyse",
+    "test": "phpunit",
+    "qa": ["@cs-check", "@stan", "@deptrac", "@test"],
     "post-install-cmd": ["@auto-scripts"],
     "post-update-cmd": ["@auto-scripts"]
   },

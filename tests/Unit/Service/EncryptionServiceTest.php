@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Unit\Service;
 
 use App\Service\EncryptionService;
@@ -8,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 final class EncryptionServiceTest extends TestCase
 {
+    /** @phpstan-ignore property.uninitialized (initialized in setUp(); review 2026-12-31) */
     private EncryptionService $service;
 
     protected function setUp(): void

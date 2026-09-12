@@ -4,6 +4,7 @@
          bootstrap="tests/bootstrap.php"
          colors="true">
     <php>
+        <env name="APP_ENV" value="test" force="true"/>
         <server name="APP_ENV" value="test" force="true"/>
         <server name="KERNEL_CLASS" value="App\Kernel"/>
         <server name="SHELL_VERBOSITY" value="-1"/>
@@ -13,4 +14,14 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+    </source>
+    <coverage>
+        <report>
+            <clover outputFile="var/coverage/clover.xml"/>
+        </report>
+    </coverage>
 </phpunit>

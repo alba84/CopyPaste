@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Form;
 
 use App\Dto\UnlockPasteData;
@@ -8,6 +10,7 @@ use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+/** @extends AbstractType<UnlockPasteData> */
 final class UnlockPasteType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void

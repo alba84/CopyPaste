@@ -6,6 +6,7 @@ namespace App\Tests\Functional;
 
 use App\Dto\EncryptedPayload;
 use App\Entity\Paste;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -13,7 +14,9 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class PasteFlowTest extends WebTestCase
 {
+    /** @phpstan-ignore property.uninitialized (initialized in setUp(); review 2026-12-31) */
     private KernelBrowser $client;
+    /** @phpstan-ignore property.uninitialized (initialized in setUp(); review 2026-12-31) */
     private EntityManagerInterface $entityManager;
 
     protected function setUp(): void
@@ -70,7 +73,7 @@ final class PasteFlowTest extends WebTestCase
         self::assertResponseStatusCodeSame(404);
 
         $payload = new EncryptedPayload(str_repeat('s', SODIUM_CRYPTO_PWHASH_SALTBYTES), str_repeat('n', SODIUM_CRYPTO_SECRETBOX_NONCEBYTES), 'ciphertext');
-        $paste = new Paste(str_repeat('b', 32), null, $payload, new \DateTimeImmutable('-2 days'), new \DateTimeImmutable('-1 day'));
+        $paste = new Paste(str_repeat('b', 32), null, $payload, new DateTimeImmutable('-2 days'), new DateTimeImmutable('-1 day'));
         $this->entityManager->persist($paste);
         $this->entityManager->flush();
 

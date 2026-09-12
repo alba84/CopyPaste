@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Command;
 
 use App\Repository\PasteRepository;
+use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,7 +24,7 @@ final class PurgeExpiredPastesCommand extends Command
     {
         $this->connection->executeStatement('PRAGMA journal_mode=WAL');
         $this->connection->executeStatement('PRAGMA busy_timeout=5000');
-        $count = $this->repository->purgeExpired(new \DateTimeImmutable());
+        $count = $this->repository->purgeExpired(new DateTimeImmutable());
         if ($count > 0) {
             $this->connection->executeStatement('PRAGMA incremental_vacuum');
         }$output->writeln(sprintf('Deleted %d expired paste(s).', $count));

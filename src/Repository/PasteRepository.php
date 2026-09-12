@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\Paste;
+use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -14,7 +17,7 @@ final class PasteRepository extends ServiceEntityRepository
         parent::__construct($registry, Paste::class);
     }
 
-    public function findActiveByToken(string $token, \DateTimeImmutable $now): ?Paste
+    public function findActiveByToken(string $token, DateTimeImmutable $now): ?Paste
     {
         $r = $this->createQueryBuilder('p')->andWhere('p.token = :token')->andWhere('p.expiresAt > :now')->setParameter('token', $token)->setParameter('now', $now)->getQuery()->getOneOrNullResult();
 
@@ -26,7 +29,7 @@ final class PasteRepository extends ServiceEntityRepository
         return null !== $this->findOneBy(['token' => $token]);
     }
 
-    public function purgeExpired(\DateTimeImmutable $now): int
+    public function purgeExpired(DateTimeImmutable $now): int
     {
         return (int) $this->createQueryBuilder('p')->delete()->andWhere('p.expiresAt <= :now')->setParameter('now', $now)->getQuery()->execute();
     }

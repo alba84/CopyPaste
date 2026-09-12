@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Dto\CreatePasteData;
@@ -9,6 +11,8 @@ use App\Form\CreatePasteType;
 use App\Form\UnlockPasteType;
 use App\Repository\PasteRepository;
 use App\Service\EncryptionService;
+use DateInterval;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
@@ -34,8 +38,8 @@ final class PasteController extends AbstractController
                 do {
                     $token = bin2hex(random_bytes(16));
                 } while ($repository->tokenExists($token));
-                $now = new \DateTimeImmutable();
-                $paste = new Paste($token, $data->hint, $encryption->encrypt($data->text, $data->secret), $now, $now->add(new \DateInterval('P'.$pasteTtlDays.'D')));
+                $now = new DateTimeImmutable();
+                $paste = new Paste($token, $data->hint, $encryption->encrypt($data->text, $data->secret), $now, $now->add(new DateInterval('P'.$pasteTtlDays.'D')));
                 $em->persist($paste);
                 $em->flush();
 
@@ -60,7 +64,7 @@ final class PasteController extends AbstractController
     #[Route('/p/{token}', name: 'app_paste_view', requirements: ['token' => '[a-f0-9]{32}'], methods: ['GET', 'POST'])]
     public function view(string $token, Request $request, PasteRepository $repository, EncryptionService $encryption, RateLimiterFactory $unlockPasteLimiter): Response
     {
-        $paste = $repository->findActiveByToken($token, new \DateTimeImmutable());
+        $paste = $repository->findActiveByToken($token, new DateTimeImmutable());
         if (null === $paste) {
             throw $this->createNotFoundException('Запись не найдена или срок её хранения истёк');
         }

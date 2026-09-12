@@ -11,8 +11,8 @@ WORKDIR /app
 
 FROM base AS dev
 RUN apk add --no-cache --virtual .xdebug-build-deps $PHPIZE_DEPS linux-headers \
-    && pecl install xdebug \
-    && docker-php-ext-enable xdebug \
+    && pecl install xdebug pcov \
+    && docker-php-ext-enable xdebug pcov \
     && apk del .xdebug-build-deps
 COPY docker/php/conf.d/dev.ini /usr/local/etc/php/conf.d/99-app.ini
 CMD ["php-fpm"]

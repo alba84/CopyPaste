@@ -36,7 +36,7 @@
 | `001` | `[x]` | quality-tooling-bootstrap (QA-набор, PHPStan L10, deptrac as-is) | — | — |
 | `002` | `[x]` | extract-create-secret — **эталонный срез** | 001 | крипто-формат; стратегия персистентности; deptrac целевые слои |
 | `003` | `[x]` | extract-reveal-secret | 002 | безопасность (no-store, нейтральные ошибки) |
-| `004` | `[ ]` | extract-purge-expired-secrets | 002 | — |
+| `004` | `[x]` | extract-purge-expired-secrets | 002 | — |
 | `005` | `[ ]` | remove-legacy-paste + целевой deptrac | 003, 004 | удаление легаси, смена стандарта границ → ADR |
 | `006` | `[ ]` | extract-access-rate-limiting (контекст `Access`) | 004, 005 | изменение лимитов/квот |
 | `007` | `[ ]` | finalize-architecture-docs (as-is, глоссарий, ADR, changelog) | 005, 006 | правка `docs/ARCHITECTURE.md` |
@@ -115,3 +115,5 @@
 | — | 003 | G1 утверждён (Q1–Q7, все A; burn-after-reading вне объёма); в работе |
 | — | 003 | G2 утверждён (plan.md + query `LoadRevealSecret`); в работе |
 | — | 003 | Реализовано (Ш1–Ш4), `make qa`/`make coverage`/`schema:validate` зелёные; ревью `approved`; коммит выполнен |
+| — | 004 | G1 утверждён (Q1–Q6, все A); в работе |
+| — | 004 | Реализовано (Ш1–Ш4), `make qa`/`make coverage`/`schema:validate` зелёные; ревью `approved`; коммит выполнен |

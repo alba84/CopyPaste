@@ -1,15 +1,28 @@
 parameters:
-    app.paste_ttl_days: '%env(int:APP_PASTE_TTL_DAYS)%'
+    app.secret_ttl_days: '%env(int:APP_PASTE_TTL_DAYS)%'
 services:
     _defaults:
         autowire: true
         autoconfigure: true
         bind:
-            $pasteTtlDays: '%app.paste_ttl_days%'
             $configuredOpsLimit: '%env(int:APP_KDF_OPSLIMIT)%'
             $configuredMemLimit: '%env(int:APP_KDF_MEMLIMIT)%'
             $createPasteLimiter: '@limiter.create_paste'
             $unlockPasteLimiter: '@limiter.unlock_paste'
+            Psr\Clock\ClockInterface: '@clock'
     App\:
         resource: '../src/'
-        exclude: ['../src/Entity/', '../src/Kernel.php']
+        exclude:
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Secret/Domain/Model/'
+            - '../src/Secret/Domain/Event/'
+            - '../src/Secret/Domain/Exception/'
+            - '../src/Crypto/Domain/'
+            - '../src/Secret/Infrastructure/Persistence/Doctrine/SecretRecord.php'
+    App\Secret\Domain\Model\Ttl:
+        factory: ['App\Secret\Domain\Model\Ttl', 'fromDays']
+        arguments: ['%app.secret_ttl_days%']
+    App\Secret\Domain\Repository\SecretRepository: '@App\Secret\Infrastructure\Persistence\Doctrine\DoctrineSecretRepository'
+    App\Secret\Domain\Service\TokenGenerator: '@App\Secret\Infrastructure\Token\RandomTokenGenerator'
+    App\Crypto\Domain\Cryptography: '@App\Crypto\Infrastructure\Sodium\SodiumCryptography'

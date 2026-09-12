@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Dto\CreatePasteData;
 use App\Dto\UnlockPasteData;
 use App\Entity\Paste;
-use App\Form\CreatePasteType;
 use App\Form\UnlockPasteType;
 use App\Repository\PasteRepository;
 use App\Service\EncryptionService;
-use DateInterval;
 use DateTimeImmutable;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,32 +20,6 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final class PasteController extends AbstractController
 {
-    #[Route('/', name: 'app_home', methods: ['GET', 'POST'])]
-    public function create(Request $request, EncryptionService $encryption, EntityManagerInterface $em, PasteRepository $repository, RateLimiterFactory $createPasteLimiter, int $pasteTtlDays): Response
-    {
-        $data = new CreatePasteData();
-        $form = $this->createForm(CreatePasteType::class, $data);
-        $form->handleRequest($request);
-        if ($form->isSubmitted()) {
-            $ip = $request->getClientIp() ?? 'unknown';
-            if (!$createPasteLimiter->create($ip)->consume()->isAccepted()) {
-                $form->addError(new FormError('Слишком много запросов. Попробуйте через минуту.'));
-            } elseif ($form->isValid()) {
-                do {
-                    $token = bin2hex(random_bytes(16));
-                } while ($repository->tokenExists($token));
-                $now = new DateTimeImmutable();
-                $paste = new Paste($token, $data->hint, $encryption->encrypt($data->text, $data->secret), $now, $now->add(new DateInterval('P'.$pasteTtlDays.'D')));
-                $em->persist($paste);
-                $em->flush();
-
-                return $this->redirectToRoute('app_paste_created', ['token' => $token]);
-            }
-        }
-
-        return $this->render('paste/create.html.twig', ['form' => $form]);
-    }
-
     #[Route('/created/{token}', name: 'app_paste_created', requirements: ['token' => '[a-f0-9]{32}'], methods: ['GET'])]
     public function created(string $token, PasteRepository $repository): Response
     {

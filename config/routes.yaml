@@ -3,3 +3,9 @@ controllers:
         path: ../src/Controller/
         namespace: App\Controller
     type: attribute
+
+secret_controllers:
+    resource:
+        path: ../src/Secret/Presentation/Http/
+        namespace: App\Secret\Presentation\Http
+    type: attribute

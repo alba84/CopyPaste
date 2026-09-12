@@ -7,6 +7,7 @@ namespace App\Tests\Functional;
 use App\Crypto\Domain\Cryptography;
 use App\Crypto\Infrastructure\Sodium\SodiumCryptography;
 use App\Secret\Application\CreateSecret\CreateSecretHandler;
+use App\Secret\Application\PurgeExpiredSecrets\PurgeExpiredSecretsHandler;
 use App\Secret\Application\RevealSecret\LoadRevealSecretHandler;
 use App\Secret\Application\RevealSecret\RevealSecretHandler;
 use App\Secret\Domain\Repository\SecretRepository;
@@ -41,6 +42,14 @@ final class SecretWiringTest extends KernelTestCase
 
         self::assertInstanceOf(RevealSecretHandler::class, $container->get(RevealSecretHandler::class));
         self::assertInstanceOf(LoadRevealSecretHandler::class, $container->get(LoadRevealSecretHandler::class));
+    }
+
+    public function testContainerExposesPurgeExpiredSecretsHandler(): void
+    {
+        self::bootKernel();
+        $container = self::getContainer();
+
+        self::assertInstanceOf(PurgeExpiredSecretsHandler::class, $container->get(PurgeExpiredSecretsHandler::class));
     }
 
     public function testCreateSecretTypeKeepsLegacyWireContract(): void

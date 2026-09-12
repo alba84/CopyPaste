@@ -1,5 +1,20 @@
 # Repository Guidelines
 
+## Standards & Agent Team
+
+Источники правды по архитектуре и процессу:
+
+- `docs/ARCHITECTURE.md` — целевая архитектура, границы модулей, DDD-паттерны.
+- `docs/CONVENTIONS.md` — соглашения по коду, ошибкам и тестам.
+- `docs/QUALITY.md` — инструменты, пороги и Definition of Done.
+- `docs/UBIQUITOUS_LANGUAGE.md` — единый язык проекта.
+- `docs/task/README.md` — артефакты задач, гейты и шаблоны.
+- `docs/adr/` — архитектурные решения (ADR).
+
+Конфигурации агентов — в `.opencode/agent/`. Новую задачу запускает команда
+`/feature <описание>`, архитектурное решение — `/adr <описание>`. Агенты не
+делают commit/push/deploy; это гейт человека.
+
 ## Project Structure & Module Organization
 
 Application code lives in `src/`: controllers handle HTTP flows, form types and DTOs validate input, `Entity/` and `Repository/` manage encrypted paste storage, and `Service/EncryptionService.php` is the only place that should call Sodium. Twig views are under `templates/`; browser assets are in `public/`. Database migrations belong in `migrations/`. Unit and HTTP-level tests live in `tests/Unit/` and `tests/Functional/`. Docker, Nginx, and PHP configuration is kept in `docker/`, `compose.yaml`, and `compose.prod.yaml`.
@@ -20,7 +35,7 @@ The application is available at `http://localhost:8080`.
 
 ## Coding Style & Naming Conventions
 
-Target PHP 8.4 and Symfony 7.4. Follow Symfony coding standards, four-space indentation, strict types in new PHP files, typed properties, and explicit return types. Classes use PascalCase; methods and variables use camelCase. Name controllers `*Controller`, forms `*Type`, commands `*Command`, and tests `*Test`. Run PHP-CS-Fixer and PHPStan level 8 before submitting changes.
+Target PHP 8.4 and Symfony 7.4. Follow Symfony coding standards, four-space indentation, `declare(strict_types=1)` in every PHP file, typed properties, and explicit return types. Classes use PascalCase; methods and variables use camelCase. Name controllers `*Controller`, forms `*Type`, commands `*Command`, and tests `*Test`. Run `make qa` (PHP-CS-Fixer, PHPStan — target level 10, deptrac, PHPUnit) before submitting changes; see `docs/QUALITY.md`.
 
 ## Testing Guidelines
 

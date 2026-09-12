@@ -51,7 +51,7 @@ composer require --dev phpstan/phpstan-doctrine \
 composer require --dev deptrac/deptrac
 ```
 
-`deptrac.yaml` (ориентир, уточняется при появлении модулей):
+`deptrac.yaml` (итоговый целевой набор зафиксирован ADR 0002):
 
 ```yaml
 deptrac:
@@ -72,11 +72,13 @@ deptrac:
     - name: Shared
       collectors: [{ type: classNameRegex, value: '#^App\\Shared\\#' }]
   ruleset:
+    Shared: []
     Secret_Domain: [Shared]
-    Secret_Application: [Secret_Domain, Crypto_Domain, Shared]
-    Secret_Infrastructure: [Secret_Domain, Secret_Application, Crypto_Domain, Shared, Symfony, Doctrine, Psr]
+    Crypto_Domain: [Secret_Domain, Shared]
+    Secret_Application: [Secret_Domain, Crypto_Domain, Shared, Psr]
+    Crypto_Infrastructure: [Crypto_Domain, Secret_Domain, Shared]
+    Secret_Infrastructure: [Secret_Domain, Secret_Application, Crypto_Domain, Shared, Doctrine]
     Secret_Presentation: [Secret_Application, Secret_Domain, Symfony, Psr]
-    Crypto_Infrastructure: [Crypto_Domain, Shared]
   skip_violations: {}
 ```
 

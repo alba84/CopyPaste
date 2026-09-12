@@ -15,6 +15,13 @@ deptrac:
     - { name: Doctrine,        collectors: [{ type: classNameRegex, value: '#^Doctrine\\#' }] }
     - { name: Psr,             collectors: [{ type: classNameRegex, value: '#^Psr\\#' }] }
     - { name: Cron,            collectors: [{ type: classNameRegex, value: '#^Cron\\#' }] }
+    - { name: Secret_Domain,         collectors: [{ type: classNameRegex, value: '#^App\\Secret\\Domain\\#' }] }
+    - { name: Secret_Application,    collectors: [{ type: classNameRegex, value: '#^App\\Secret\\Application\\#' }] }
+    - { name: Secret_Infrastructure, collectors: [{ type: classNameRegex, value: '#^App\\Secret\\Infrastructure\\#' }] }
+    - { name: Secret_Presentation,   collectors: [{ type: classNameRegex, value: '#^App\\Secret\\Presentation\\#' }] }
+    - { name: Crypto_Domain,         collectors: [{ type: classNameRegex, value: '#^App\\Crypto\\Domain\\#' }] }
+    - { name: Crypto_Infrastructure, collectors: [{ type: classNameRegex, value: '#^App\\Crypto\\Infrastructure\\#' }] }
+    - { name: Shared,                collectors: [{ type: classNameRegex, value: '#^App\\Shared\\#' }] }
   ruleset:
     Kernel: [Symfony]
     Schedule: [Symfony, Cron]
@@ -26,4 +33,11 @@ deptrac:
     Repository: [Entity, Doctrine]
     Command: [Repository, Doctrine, Symfony]
     EventSubscriber: [Doctrine, Symfony]
+    Shared: []
+    Secret_Domain: [Shared]
+    Crypto_Domain: [Secret_Domain, Shared]
+    Secret_Application: [Secret_Domain, Crypto_Domain, Shared, Psr]
+    Crypto_Infrastructure: [Crypto_Domain, Secret_Domain, Shared]
+    Secret_Infrastructure: [Secret_Domain, Secret_Application, Crypto_Domain, Shared, Doctrine]
+    Secret_Presentation: [Secret_Application, Secret_Domain, Symfony, Psr]
   skip_violations: {}

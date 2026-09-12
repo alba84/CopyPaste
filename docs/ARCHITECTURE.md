@@ -157,7 +157,9 @@ Presentation ──▶ Application ──▶ Domain
   XML-маппинг в `Infrastructure/Persistence/Doctrine/Mapping` **или** отдельная
   persistence-модель + маппер, когда маппинг VO/BLOB нетривиален. Стандарт:
   для `Secret` с несколькими VO использовать отдельную persistence-модель и
-  явный маппер.
+  явный маппер. При конфликте ORM-маппинга с легаси-схемой persistence-модель
+  может быть DBAL-моделью (`final readonly`, без ORM-атрибутов) с явным
+  маппером; выбор для `Secret` зафиксирован ADR 0002.
 - Кастомные Doctrine-типы для VO (`TokenType`, `EncryptedPayloadType`) — в
   `Infrastructure`. Знание о SQL-представлении не протекает в домен.
 - Смена СУБД (SQLite → PostgreSQL) должна оставаться заменой адаптера и

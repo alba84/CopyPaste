@@ -160,12 +160,18 @@ Presentation ──▶ Application ──▶ Domain
   явный маппер. При конфликте ORM-маппинга с легаси-схемой persistence-модель
   может быть DBAL-моделью (`final readonly`, без ORM-атрибутов) с явным
   маппером; выбор для `Secret` зафиксирован ADR 0002.
-- ORM-владение схемой таблицы `paste` после удаления легаси-сущности
+- ORM-владение схемой таблицы `secret` после удаления легаси-сущности
   `App\Entity\Paste` переходит к минимальному schema-anchor в
-  `Secret/Infrastructure` — ORM-классу, отображающему `paste` и используемому
-  только инструментами схемы (`SchemaTool`, `doctrine:schema:validate`);
-  рантайм-персистентность остаётся за DBAL-адаптером `DoctrineSecretRepository`.
-  Владение схемой и контроль дрейфа — ADR 0003.
+  `Secret/Infrastructure` — ORM-классу `SecretSchemaAnchor`, отображающему
+  `secret` и используемому только инструментами схемы (`SchemaTool`,
+  `doctrine:schema:validate`); рантайм-персистентность остаётся за DBAL-адаптером
+  `DoctrineSecretRepository`. Владение схемой и контроль дрейфа — ADR 0003.
+- Явные имена индексов `secret` закреплены одновременно в ORM-анкоре
+  (`#[ORM\UniqueConstraint(name: 'uniq_secret_token', ...)]`,
+  `#[ORM\Index(name: 'idx_secret_expires_at', ...)]`) и в миграции: авто-хеш
+  Doctrine (`UNIQ_<hash(table,column)>`) не используется, чтобы имена не
+  зависели от имени таблицы. Переименование `paste → secret` и политика имён
+  зафиксированы ADR 0004.
 - Кастомные Doctrine-типы для VO (`TokenType`, `EncryptedPayloadType`) — в
   `Infrastructure`. Знание о SQL-представлении не протекает в домен.
 - Смена СУБД (SQLite → PostgreSQL) должна оставаться заменой адаптера и

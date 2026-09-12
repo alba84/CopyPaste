@@ -127,3 +127,11 @@ columns: ['expires_at'])]` — метаданные структурно иде�
 - `docs/task/ROADMAP.md` — статус 005/005b.
 
 До одобрения правила применяются как согласованные на G1 (Q1-A, Q2-A).
+
+## Актуализация
+
+Выбор Q1-A подтверждён: ADR 0004 переименовал таблицу `paste → secret` и
+schema-anchor `PasteSchemaAnchor` → `SecretSchemaAnchor` (таблица `secret`) и
+закрепил явные имена индексов `uniq_secret_token` / `idx_secret_expires_at`.
+Переход на migrations-only (удаление anchor) остаётся отдельной задачей; решение
+этого ADR в части владения ORM-схемой сохраняет силу.

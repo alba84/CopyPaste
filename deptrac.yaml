@@ -3,13 +3,6 @@ deptrac:
   layers:
     - { name: Kernel,          collectors: [{ type: classNameRegex, value: '#^App\\Kernel$#' }] }
     - { name: Schedule,        collectors: [{ type: classNameRegex, value: '#^App\\Schedule$#' }] }
-    - { name: Controller,      collectors: [{ type: classNameRegex, value: '#^App\\Controller\\#' }] }
-    - { name: Form,            collectors: [{ type: classNameRegex, value: '#^App\\Form\\#' }] }
-    - { name: Dto,             collectors: [{ type: classNameRegex, value: '#^App\\Dto\\#' }] }
-    - { name: Entity,          collectors: [{ type: classNameRegex, value: '#^App\\Entity\\#' }] }
-    - { name: Repository,      collectors: [{ type: classNameRegex, value: '#^App\\Repository\\#' }] }
-    - { name: Service,         collectors: [{ type: classNameRegex, value: '#^App\\Service\\#' }] }
-    - { name: Command,         collectors: [{ type: classNameRegex, value: '#^App\\Command\\#' }] }
     - { name: EventSubscriber, collectors: [{ type: classNameRegex, value: '#^App\\EventSubscriber\\#' }] }
     - { name: Symfony,         collectors: [{ type: classNameRegex, value: '#^Symfony\\#' }] }
     - { name: Doctrine,        collectors: [{ type: classNameRegex, value: '#^Doctrine\\#' }] }
@@ -25,13 +18,6 @@ deptrac:
   ruleset:
     Kernel: [Symfony]
     Schedule: [Symfony, Cron]
-    Controller: [Form, Dto, Entity, Repository, Service, Symfony, Doctrine]
-    Form: [Dto, Symfony]
-    Dto: [Symfony]
-    Service: [Dto]
-    Entity: [Dto, Doctrine, Repository]
-    Repository: [Entity, Doctrine]
-    Command: [Repository, Doctrine, Symfony]
     EventSubscriber: [Doctrine, Symfony]
     Shared: []
     Secret_Domain: [Shared]

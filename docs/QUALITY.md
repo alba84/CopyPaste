@@ -51,12 +51,31 @@ composer require --dev phpstan/phpstan-doctrine \
 composer require --dev deptrac/deptrac
 ```
 
-`deptrac.yaml` (итоговый целевой набор зафиксирован ADR 0002):
+`deptrac.yaml` — итоговый целевой набор (ADR 0002, ADR 0003, решение Q2-A задачи
+005). Бизнес-слои легаси `App\*`
+(`Controller`/`Form`/`Dto`/`Entity`/`Repository`/`Service`/`Command`) удалены в
+005a и в ruleset отсутствуют. Остаются минимальные технические слои `Kernel`,
+`Schedule`, `EventSubscriber` — bootstrap-инфраструктура фреймворка, не
+бизнес-легаси:
 
 ```yaml
 deptrac:
   paths: [src]
   layers:
+    - name: Kernel
+      collectors: [{ type: classNameRegex, value: '#^App\\Kernel$#' }]
+    - name: Schedule
+      collectors: [{ type: classNameRegex, value: '#^App\\Schedule$#' }]
+    - name: EventSubscriber
+      collectors: [{ type: classNameRegex, value: '#^App\\EventSubscriber\\#' }]
+    - name: Symfony
+      collectors: [{ type: classNameRegex, value: '#^Symfony\\#' }]
+    - name: Doctrine
+      collectors: [{ type: classNameRegex, value: '#^Doctrine\\#' }]
+    - name: Psr
+      collectors: [{ type: classNameRegex, value: '#^Psr\\#' }]
+    - name: Cron
+      collectors: [{ type: classNameRegex, value: '#^Cron\\#' }]
     - name: Secret_Domain
       collectors: [{ type: classNameRegex, value: '#^App\\Secret\\Domain\\#' }]
     - name: Secret_Application
@@ -72,6 +91,9 @@ deptrac:
     - name: Shared
       collectors: [{ type: classNameRegex, value: '#^App\\Shared\\#' }]
   ruleset:
+    Kernel: [Symfony]
+    Schedule: [Symfony, Cron]
+    EventSubscriber: [Doctrine, Symfony]
     Shared: []
     Secret_Domain: [Shared]
     Crypto_Domain: [Secret_Domain, Shared]

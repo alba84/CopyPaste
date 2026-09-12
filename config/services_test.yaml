@@ -1,0 +1,9 @@
+services:
+    _defaults:
+        autowire: true
+        bind:
+            $configuredOpsLimit: '%env(int:APP_KDF_OPSLIMIT)%'
+            $configuredMemLimit: '%env(int:APP_KDF_MEMLIMIT)%'
+
+    App\Service\EncryptionService:
+        public: true

@@ -9,6 +9,7 @@ use App\Entity\Paste;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
+use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -23,6 +24,12 @@ final class PasteFlowTest extends WebTestCase
     {
         $this->client = self::createClient();
         $container = self::getContainer();
+
+        // Technical isolation of the fixed-window rate limiter (Q6-A).
+        $cache = $container->get('cache.app');
+        self::assertInstanceOf(CacheItemPoolInterface::class, $cache);
+        $cache->clear();
+
         $entityManager = $container->get(EntityManagerInterface::class);
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
         $this->entityManager = $entityManager;

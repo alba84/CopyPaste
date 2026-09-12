@@ -8,6 +8,9 @@ use App\Crypto\Domain\Cryptography;
 use App\Crypto\Domain\DecryptedPlaintext;
 use App\Entity\Paste;
 use App\Repository\PasteRepository;
+use App\Secret\Application\RevealSecret\Revealed;
+use App\Secret\Application\RevealSecret\RevealSecret;
+use App\Secret\Application\RevealSecret\RevealSecretHandler;
 use App\Secret\Domain\Model\Plaintext;
 use App\Secret\Domain\Model\Secret;
 use App\Secret\Domain\Model\SecretKey;
@@ -62,7 +65,7 @@ final class LegacyInteropTest extends KernelTestCase
         $decrypted = $this->cryptography()->decrypt($secret->payload(), SecretKey::fromString($secretKey));
 
         self::assertInstanceOf(DecryptedPlaintext::class, $decrypted);
-        self::assertSame($plaintext, $decrypted->plaintext->value);
+        self::assertSame($plaintext, $decrypted->plaintext);
     }
 
     public function testSecretSavedByNewPathIsReadableAndDecryptableByLegacyPath(): void
@@ -85,6 +88,53 @@ final class LegacyInteropTest extends KernelTestCase
 
         self::assertInstanceOf(Paste::class, $paste);
         self::assertSame($plaintext, $this->legacyEncryption()->decrypt($paste->getEncryptedPayload(), $secretKey));
+    }
+
+    public function testLegacySavedSecretIsRevealedByApplicationUseCase(): void
+    {
+        $token = str_repeat('c', 32);
+        $plaintext = 'Легаси запись, открытая Reveal use case';
+        $secretKey = 'legacy-reveal-key';
+        $createdAt = new DateTimeImmutable('-1 hour');
+        $legacyPayload = $this->legacyEncryption()->encrypt($plaintext, $secretKey);
+
+        $this->entityManager->persist(new Paste($token, 'подсказка', $legacyPayload, $createdAt, $createdAt->add(new DateInterval('P1D'))));
+        $this->entityManager->flush();
+
+        $result = $this->revealSecretHandler()(new RevealSecret($token, $secretKey));
+
+        self::assertInstanceOf(Revealed::class, $result);
+        self::assertSame($plaintext, $result->plaintext);
+    }
+
+    public function testSecretSavedByNewPathIsRevealedByApplicationUseCase(): void
+    {
+        $token = str_repeat('d', 32);
+        $plaintext = 'Запись 002, открытая Reveal use case';
+        $secretKey = 'new-reveal-key';
+        $payload = $this->cryptography()->encrypt(Plaintext::fromString($plaintext), SecretKey::fromString($secretKey));
+        $secret = Secret::create(
+            new Token($token),
+            null,
+            $payload,
+            new DateTimeImmutable('-1 hour'),
+            Ttl::fromDays(7),
+        );
+
+        $this->secretRepository()->save($secret);
+
+        $result = $this->revealSecretHandler()(new RevealSecret($token, $secretKey));
+
+        self::assertInstanceOf(Revealed::class, $result);
+        self::assertSame($plaintext, $result->plaintext);
+    }
+
+    private function revealSecretHandler(): RevealSecretHandler
+    {
+        $handler = self::getContainer()->get(RevealSecretHandler::class);
+        self::assertInstanceOf(RevealSecretHandler::class, $handler);
+
+        return $handler;
     }
 
     private function secretRepository(): SecretRepository

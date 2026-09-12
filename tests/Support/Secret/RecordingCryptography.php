@@ -16,8 +16,13 @@ final class RecordingCryptography implements Cryptography
     /** @var list<array{plaintext: Plaintext, secret: SecretKey}> */
     public array $encryptions = [];
 
-    public function __construct(private readonly EncryptedPayload $payload)
-    {
+    /** @var list<array{payload: EncryptedPayload, secret: SecretKey}> */
+    public array $decryptions = [];
+
+    public function __construct(
+        private readonly EncryptedPayload $payload,
+        private readonly ?DecryptionResult $decryptionResult = null,
+    ) {
     }
 
     public function encrypt(Plaintext $plaintext, SecretKey $secret): EncryptedPayload
@@ -29,6 +34,8 @@ final class RecordingCryptography implements Cryptography
 
     public function decrypt(EncryptedPayload $payload, SecretKey $secret): DecryptionResult
     {
-        return DecryptionFailed::invalidKey();
+        $this->decryptions[] = ['payload' => $payload, 'secret' => $secret];
+
+        return $this->decryptionResult ?? DecryptionFailed::invalidKey();
     }
 }

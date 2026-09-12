@@ -39,7 +39,7 @@
 | `004` | `[x]` | extract-purge-expired-secrets | 002 | — |
 | `005` | `[x]` | remove-legacy-paste (005a) — без миграции | 003, 004 | удаление легаси; целевой deptrac |
 | `006` | `[x]` | rename-paste-table-to-secret (005b) | 005 | миграция БД, переименование таблицы |
-| `007` | `[ ]` | extract-access-rate-limiting (контекст `Access`) | 006 | изменение лимитов/квот |
+| `007` | `[x]` | extract-access-rate-limiting (контекст `Access`) | 006 | изменение лимитов/квот |
 | `008` | `[ ]` | finalize-architecture-docs (as-is, глоссарий, changelog) | 007 | правка `docs/ARCHITECTURE.md` |
 
 Легенда статусов задач: `[ ]` не начато, `[~]` в работе (на одном из гейтов),
@@ -135,3 +135,5 @@
 | — | 005 | G2 утверждён (plan.md + ADR 0003); ревью: B1 (final ORM) исправлен, повторно `approved`; коммит выполнен |
 | — | 006 | G1 утверждён (anchor оставить, secret-имена индексов, публичные имена не трогать, ADR 0004; миграция с сохранением данных); в работе |
 | — | 006 | Реализовано (Ш1–Ш2), миграция up/down и `schema:validate` зелёные; ревью `approved`; коммит выполнен |
+| — | 007 | G1 утверждён (Q1-A: порт Access/Domain + адаптер Access/Infrastructure, вызов в Presentation; ADR не нужен); в работе |
+| — | 007 | Реализовано (Ш1–Ш4), `make qa`/`make coverage` зелёные; ревью `approved`; коммит выполнен |

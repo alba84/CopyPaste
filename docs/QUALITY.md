@@ -88,6 +88,10 @@ deptrac:
       collectors: [{ type: classNameRegex, value: '#^App\\Crypto\\Domain\\#' }]
     - name: Crypto_Infrastructure
       collectors: [{ type: classNameRegex, value: '#^App\\Crypto\\Infrastructure\\#' }]
+    - name: Access_Domain
+      collectors: [{ type: classNameRegex, value: '#^App\\Access\\Domain\\#' }]
+    - name: Access_Infrastructure
+      collectors: [{ type: classNameRegex, value: '#^App\\Access\\Infrastructure\\#' }]
     - name: Shared
       collectors: [{ type: classNameRegex, value: '#^App\\Shared\\#' }]
   ruleset:
@@ -99,8 +103,10 @@ deptrac:
     Crypto_Domain: [Secret_Domain, Shared]
     Secret_Application: [Secret_Domain, Crypto_Domain, Shared, Psr]
     Crypto_Infrastructure: [Crypto_Domain, Secret_Domain, Shared]
+    Access_Domain: []
+    Access_Infrastructure: [Access_Domain, Symfony, Shared]
     Secret_Infrastructure: [Secret_Domain, Secret_Application, Crypto_Domain, Shared, Doctrine]
-    Secret_Presentation: [Secret_Application, Secret_Domain, Symfony, Psr]
+    Secret_Presentation: [Secret_Application, Secret_Domain, Symfony, Psr, Access_Domain]
   skip_violations: {}
 ```
 

@@ -28,9 +28,4 @@ final class PasteRepository extends ServiceEntityRepository
     {
         return null !== $this->findOneBy(['token' => $token]);
     }
-
-    public function purgeExpired(DateTimeImmutable $now): int
-    {
-        return (int) $this->createQueryBuilder('p')->delete()->andWhere('p.expiresAt <= :now')->setParameter('now', $now)->getQuery()->execute();
-    }
 }

@@ -6,6 +6,7 @@ namespace App\Secret\Domain\Repository;
 
 use App\Secret\Domain\Model\Secret;
 use App\Secret\Domain\Model\Token;
+use DateTimeImmutable;
 
 interface SecretRepository
 {
@@ -14,4 +15,6 @@ interface SecretRepository
     public function findByToken(Token $token): ?Secret;
 
     public function tokenExists(Token $token): bool;
+
+    public function removeExpiredBefore(DateTimeImmutable $now): int;
 }

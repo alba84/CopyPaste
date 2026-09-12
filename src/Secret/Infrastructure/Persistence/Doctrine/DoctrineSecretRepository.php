@@ -7,6 +7,7 @@ namespace App\Secret\Infrastructure\Persistence\Doctrine;
 use App\Secret\Domain\Model\Secret;
 use App\Secret\Domain\Model\Token;
 use App\Secret\Domain\Repository\SecretRepository;
+use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 
@@ -59,5 +60,23 @@ final readonly class DoctrineSecretRepository implements SecretRepository
             'SELECT 1 FROM paste WHERE token = :token',
             ['token' => $token->value],
         );
+    }
+
+    public function removeExpiredBefore(DateTimeImmutable $now): int
+    {
+        $this->connection->executeStatement('PRAGMA journal_mode=WAL');
+        $this->connection->executeStatement('PRAGMA busy_timeout=5000');
+
+        $count = (int) $this->connection->executeStatement(
+            'DELETE FROM paste WHERE expires_at <= :now',
+            ['now' => $now],
+            ['now' => Types::DATETIME_IMMUTABLE],
+        );
+
+        if ($count > 0) {
+            $this->connection->executeStatement('PRAGMA incremental_vacuum');
+        }
+
+        return $count;
     }
 }

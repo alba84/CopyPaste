@@ -4,9 +4,12 @@
 опираются все агенты команды. Изменять его можно только через ADR и гейт
 подтверждения человеком (см. раздел «Эволюция стандартов»).
 
-Статус: целевая архитектура, к которой проект приводится инкрементально.
-Текущий код ещё не соответствует ей полностью — см. «Текущее состояние» и
-«Стратегия миграции».
+Статус: целевая архитектура. Миграция 002–007 завершена: контексты `Secret`,
+`Crypto` и `Access` приведены к целевой структуре, бизнес-легаси `App\*` удалён
+(остаются только технические слои `Kernel`, `Schedule`, `EventSubscriber`).
+Остаточные шаги и известный долг перечислены в §2, §9 и
+`docs/task/008-finalize-architecture-docs/notes.md`. Разделы §3–§7 описывают
+целевое состояние и остаются обязательным стандартом.
 
 ## 1. Цели и принципы
 
@@ -23,19 +26,48 @@
 
 ## 2. Текущее состояние (as-is)
 
-- `src/Entity/Paste.php` — единственный агрегат, жёстко связанный с Doctrine
-  ORM-маппингом через атрибуты.
-- `src/Controller/PasteController.php` — оркестрация сценария, генерация
-  токена, расчёт TTL, rate limiting, persist/flush в одном месте.
-- `src/Service/EncryptionService.php` — рабочая криптография Sodium.
-- `src/Dto/*` — изменяемые DTO форм/запросов.
-- `src/Repository/PasteRepository.php` — Doctrine-репозиторий, отдаёт сущность
-  наружу и содержит QueryBuilder.
-- `src/Command`, `src/Schedule`, `src/EventSubscriber` — инфраструктурные
-  детали в корне `src/`.
+Миграция 002–007 завершена: контексты `Secret`, `Crypto` и `Access` выделены в
+целевой структуре §3.2, бизнес-легаси `App\*` удалён.
 
-Вывод: домена как слоя нет, сценарий живёт в контроллере, границы нечем
-проверять. Кодовая база маленькая — это лучший момент для направления.
+- `src/Secret/` — ядро (bounded context):
+  - `Domain/` — агрегат `Secret`, VO (`Token`, `Ttl`, `Hint`, `Plaintext`,
+    `SecretKey`, `EncryptedPayload`), доменные события, порты
+    `SecretRepository`/`TokenGenerator`, доменные исключения. Фреймворк не
+    импортируется.
+  - `Application/` — use cases `CreateSecret`, `RevealSecret` (типизированный
+    результат `Revealed|InvalidKey|NotFound`), `PurgeExpiredSecrets`.
+  - `Infrastructure/` — DBAL-адаптер `DoctrineSecretRepository` с
+    persistence-моделью `SecretRecord` и явным `SecretRecordMapper` (ADR 0002),
+    ORM schema-anchor `SecretSchemaAnchor` (ADR 0003/0004), генератор токенов.
+  - `Presentation/` — тонкие HTTP-контроллеры (`CreateSecretController`,
+    `RevealSecretController`, `SecretCreatedController`) и консольный
+    `PurgeExpiredSecretsCommand`.
+- `src/Crypto/` — порт `Cryptography` (`Domain`) и Sodium-адаптер
+  (`Infrastructure/Sodium/SodiumCryptography`).
+- `src/Access/` — framework-free порт `AccessLimiter` (`Domain`) и
+  Symfony-адаптер поверх `framework.rate_limiter` (`Infrastructure/Symfony`),
+  вызываемый из Presentation модуля `Secret` в прежней точке и порядке.
+- `src/Kernel.php`, `src/Schedule.php`, `src/EventSubscriber/` — минимальные
+  технические слои bootstrap-инфраструктуры фреймворка, не бизнес-легаси.
+- Слой `Shared` зарезервирован в deptrac; собственных классов пока не содержит.
+- Персистентность: таблица `secret` (переименована миграцией
+  `Version20260910000000` с сохранением данных), явные имена индексов
+  `uniq_secret_token`/`idx_secret_expires_at`.
+- Границы слоёв проверяются deptrac по целевому набору
+  (`Secret_*`, `Crypto_*`, `Access_*`, `Shared` + технические слои); `make qa`
+  зелёный.
+
+Остаточные отличия от целевого состояния (вне миграции 002–007):
+
+- burn-after-reading в агрегате ещё не реализован;
+- публичные/инфраструктурные имена сохранены временно легаси
+  (`app:paste:purge`, `app_paste_*`, формы `create_paste`/`unlock_paste`,
+  `templates/paste/*`, `#paste-url`, том `paste_data`) ради неизменности
+  наблюдаемого поведения — это технические идентификаторы, а не доменный язык
+  (см. `docs/UBIQUITOUS_LANGUAGE.md`);
+- владельцем ORM-схемы остаётся schema-anchor; переход на migrations-only
+  отложен (открытый долг ADR 0003/0004);
+- открытый follow-up backlog — `docs/task/008-finalize-architecture-docs/notes.md`.
 
 ## 3. Целевая архитектура: прагматичный модульный монолит
 
@@ -43,9 +75,9 @@
 
 | Контекст | Тип | Статус | Отвечает за |
 |---|---|---|---|
-| `Secret` | Ядро | Есть (размазан) | Создание, хранение, выдача, TTL, burn-after-reading |
-| `Crypto` | Generic subdomain | Есть (как сервис) | KDF + AEAD, порт + Sodium-адаптер |
-| `Access` | Supporting | Частично (rate limit) | Лимиты, квоты, защита от перебора |
+| `Secret` | Ядро | Есть | Создание, хранение, выдача, TTL, burn-after-reading |
+| `Crypto` | Generic subdomain | Есть | KDF + AEAD, порт + Sodium-адаптер |
+| `Access` | Supporting | Есть (rate limit) | Лимиты, квоты, защита от перебора |
 | `Identity` | Supporting | Планируется | Аккаунты, владельцы записей, API-токены |
 | `Audit` | Generic | Планируется | Журнал операций, модерация |
 | `Notification` | Generic | Планируется | Email/Telegram-уведомления |
@@ -214,12 +246,42 @@ Presentation ──▶ Application ──▶ Domain
 
 ## 9. Стратегия миграции
 
-Действует принцип «новое — по стандартам, старое — по мере касания»:
+Принцип «новое — по стандартам, старое — по мере касания» применялся
+инкрементально задачами 002–007 (`docs/task/ROADMAP.md`):
 
-1. Каждая новая задача создаёт код строго в целевой структуре.
-2. При касании легаси-кода (`PasteController`, `Paste`, `PasteRepository`) в
-   рамках задачи — извлекается затронутый сценарий в модуль `Secret`.
-3. Первая задача-шаблон: извлечь `CreateSecret` use case и оставить
-   `PasteController` тонким. Она фиксирует эталон для остальных.
-4. Полный отказ от легаси — отдельная задача, когда модуль `Secret` покроет
-   все сценарии.
+1. Каждая задача создавала код строго в целевой структуре; легаси не
+   переписывался оптом.
+2. Эталонный срез — задача 002: use case `CreateSecret`, тонкий
+   `PasteController`, фиксация персистентности (ADR 0002) и целевого deptrac.
+3. По тому же образцу извлечены `RevealSecret` (003), `PurgeExpiredSecrets`
+   (004) и `created` (005a); контекст `Access` выделен в 007.
+4. Историческое легаси `PasteController`, `App\Entity\Paste`,
+   `App\Repository\PasteRepository`, `App\Service\EncryptionService` и старые
+   `Dto`/`Form` удалены в 005a.
+5. Таблица `paste → secret` переименована одной миграцией с сохранением данных
+   (006, ADR 0004).
+6. Границы модулей закреплены целевым deptrac (`docs/QUALITY.md` §2.2) и
+   проверяются в `make qa`.
+
+Миграция 002–007 **завершена**: модуль `Secret` покрывает все сценарии ядра.
+
+Остаточные шаги (не часть 002–007; требуют отдельных задач и, где указано,
+ADR):
+
+1. **Burn-after-reading** — не реализован в агрегате; требует доменного
+   решения, ADR и миграции БД (признаки «одноразовый»/«просмотрен»).
+2. **Полное переименование публичных имён** `app:paste:*`, `app_paste_*`, форм
+   `create_paste`/`unlock_paste`, `templates/paste/*`, `#paste-url`, тома
+   `paste_data` в терминологию `Secret` — отдельная задача без изменения
+   поведения (URL и wire-контракты на первом шаге сохраняются).
+3. **Владение схемой:** переход на migrations-only (удаление ORM schema-anchor)
+   — открытый долг ADR 0003/0004, отдельный ADR и пересмотр `docs/QUALITY.md` §4.
+4. **Ops:** автоматический откат/restore БД при деплое (`deploy.sh` не вызывает
+   `down()`) — страховка для отката после миграции `paste → secret` (ADR 0004).
+5. **Quality:** базовый `TestCase`/`phpstan/phpstan-phpunit` вместо роста
+   `@phpstan-ignore` в тестах; вынести `migrations/` из PHPStan `paths` либо
+   типизировать их.
+6. **Access:** доверенные прокси/`getClientIp()`, квоты и контекст `Identity`.
+
+Подробный backlog и обоснования — в
+`docs/task/008-finalize-architecture-docs/notes.md`.

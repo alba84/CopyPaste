@@ -7,13 +7,13 @@
 | Инструмент | Статус | Замечание |
 |---|---|---|
 | PHPUnit 11.5 | Настроен | `make test` |
-| PHPStan | Настроен | level 8 в `phpstan.neon`, ТЗ требует level 10 |
-| PHP-CS-Fixer | Настроен | пресет `@Symfony`, `make cs-fix` |
-| CI (GitHub Actions) | Настроен | `test → build → deploy` |
-| deptrac / границы слоёв | Нет | добавить |
-| Покрытие кода | Нет | добавить |
+| PHPStan | Настроен | level 10 в `phpstan.neon`, без baseline |
+| PHP-CS-Fixer | Настроен | `@Symfony` + целевые правила, `make cs-fix`/`cs-check` |
+| CI (GitHub Actions) | Настроен | `test → build → deploy`; в job `test` — qa, `schema:validate`, покрытие |
+| deptrac / границы слоёв | Настроен | целевой ruleset (см. §2.2), `make deptrac` |
+| Покрытие кода | Настроено | clover + порог ≥90% для `src/*/{Domain,Application}`, `make coverage` |
 | Mutation testing | Нет | опционально, для домена |
-| composer QA-скрипт | Нет | добавить |
+| composer QA-скрипт | Настроен | `composer qa` |
 
 ## 2. Целевой набор
 

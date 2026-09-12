@@ -40,7 +40,7 @@
 | `005` | `[x]` | remove-legacy-paste (005a) — без миграции | 003, 004 | удаление легаси; целевой deptrac |
 | `006` | `[x]` | rename-paste-table-to-secret (005b) | 005 | миграция БД, переименование таблицы |
 | `007` | `[x]` | extract-access-rate-limiting (контекст `Access`) | 006 | изменение лимитов/квот |
-| `008` | `[ ]` | finalize-architecture-docs (as-is, глоссарий, changelog) | 007 | правка `docs/ARCHITECTURE.md` |
+| `008` | `[x]` | finalize-architecture-docs (as-is, глоссарий, backlog) | 007 | правка `docs/ARCHITECTURE.md` |
 
 Легенда статусов задач: `[ ]` не начато, `[~]` в работе (на одном из гейтов),
 `[x]` выполнено.
@@ -98,14 +98,23 @@
 
 ### 007 — extract-access-rate-limiting
 
-- Контекст `Access`: порт + адаптер rate limiting, лимиты через
-  `config/services.yaml`, интеграция в use case'ы.
-- Легаси-лимитеры из контроллеров удаляются.
+- Контекст `Access`: framework-free порт `AccessLimiter` + enum'ы
+  (`AccessLimit`, `AccessDecision`) и Symfony-адаптер в
+  `Access/Infrastructure`; лимиты — единственный источник в
+  `config/packages/rate_limiter.yaml`.
+- Вызов из `Secret/Presentation` в прежних точках/порядке (не из Application):
+  создание — до валидации, выдача — после 404, до валидации.
+- Лимиты/ключи/тексты/`422` сохранены; удалены legacy-bindings.
 
 ### 008 — finalize-architecture-docs
 
-- Актуализация `docs/ARCHITECTURE.md` (раздел «Текущее состояние»),
-  `docs/UBIQUITOUS_LANGUAGE.md`, ADR; changelog для пользовательских изменений.
+- Актуализация `docs/ARCHITECTURE.md` §2 (as-is → текущее) и §9 (миграция
+  002–007 завершена), уточнение `docs/UBIQUITOUS_LANGUAGE.md` (переходные
+  публичные имена).
+- Follow-up backlog — `docs/task/008-finalize-architecture-docs/notes.md`
+  (burn-after-reading + ADR/миграция, ops-откат БД, базовый `TestCase`/
+  `phpstan-phpunit`, `migrations/` вне PHPStan, trusted proxies, полное
+  переименование публичных имён).
 
 ## Вне объёма миграции
 
@@ -137,3 +146,4 @@
 | — | 006 | Реализовано (Ш1–Ш2), миграция up/down и `schema:validate` зелёные; ревью `approved`; коммит выполнен |
 | — | 007 | G1 утверждён (Q1-A: порт Access/Domain + адаптер Access/Infrastructure, вызов в Presentation; ADR не нужен); в работе |
 | — | 007 | Реализовано (Ш1–Ш4), `make qa`/`make coverage` зелёные; ревью `approved`; коммит выполнен |
+| — | 008 | Архитектурные документы актуализированы (§2/§9, глоссарий), backlog зафиксирован; коммит выполнен |

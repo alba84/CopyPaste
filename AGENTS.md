@@ -17,7 +17,7 @@
 
 ## Project Structure & Module Organization
 
-Application code lives in `src/`: controllers handle HTTP flows, form types and DTOs validate input, `Entity/` and `Repository/` manage encrypted paste storage, and `Service/EncryptionService.php` is the only place that should call Sodium. Twig views are under `templates/`; browser assets are in `public/`. Database migrations belong in `migrations/`. Unit and HTTP-level tests live in `tests/Unit/` and `tests/Functional/`. Docker, Nginx, and PHP configuration is kept in `docker/`, `compose.yaml`, and `compose.prod.yaml`.
+Application code lives in `src/` as a pragmatic modular monolith: `Secret/` (domain aggregate, use cases and HTTP/console adapters), `Crypto/` (framework-free `Cryptography` port with a Sodium adapter), `Access/` (rate limiting port and Symfony adapter), and the technical `Kernel.php`, `Schedule.php`, `EventSubscriber/` layers. Each module follows `Domain` / `Application` / `Infrastructure` / `Presentation` boundaries enforced by deptrac. `Secret/Infrastructure/Persistence/Doctrine` owns persistence (DBAL adapter plus an ORM schema anchor). Twig views are under `templates/`; browser assets are in `public/`. Database migrations belong in `migrations/`. Unit and HTTP-level tests live in `tests/Unit/` and `tests/Functional/`, with `tests/Integration/` for persistence and migration checks. Docker, Nginx, and PHP configuration is kept in `docker/`, `compose.yaml`, and `compose.prod.yaml`.
 
 ## Build, Test, and Development Commands
 

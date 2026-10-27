@@ -83,6 +83,42 @@ final class RevealSecretFlowTest extends WebTestCase
         $crawler->selectButton('Расшифровать');
     }
 
+    public function testRevealFormRendersSecretKeyVisibilityToggleWithoutChangingPasswordContract(): void
+    {
+        $token = str_repeat('d', 32);
+        $this->persistSecret($token, 'текст', 'ключ');
+
+        $crawler = $this->client->request('GET', '/p/'.$token);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('input[type="password"]'));
+        self::assertCount(1, $crawler->filter('input[type="password"][name="unlock_paste[secret]"]'));
+        self::assertCount(1, $crawler->filter('.secret-key-field > input[type="password"]'));
+        self::assertCount(1, $crawler->filter('.secret-key-field > button[type="button"][data-secret-key-visibility]'));
+
+        $input = $crawler->filter('input[type="password"][name="unlock_paste[secret]"]');
+        self::assertSame('255', $input->attr('maxlength'));
+        self::assertSame('current-password', $input->attr('autocomplete'));
+        self::assertSame('required', $input->attr('required'));
+        self::assertSame('input', $input->attr('class'));
+        self::assertSame('Введите ключ', $input->attr('placeholder'));
+
+        $inputId = $input->attr('id');
+        self::assertNotNull($inputId);
+
+        self::assertCount(1, $crawler->filter('button[type="button"][data-secret-key-visibility]'));
+        $button = $crawler->filter('button[type="button"][data-secret-key-visibility]');
+        self::assertSame($inputId, $button->attr('aria-controls'));
+        self::assertSame('Показать секретный ключ', $button->attr('aria-label'));
+        self::assertSame('false', $button->attr('aria-pressed'));
+        self::assertNotNull($button->attr('hidden'));
+        self::assertNull($button->attr('name'));
+
+        $svgCount = $button->filter('svg')->count();
+        self::assertGreaterThan(0, $svgCount);
+        self::assertSame($svgCount, $button->filter('svg[aria-hidden="true"]')->count());
+    }
+
     public function testActiveSecretWithoutHintRendersNoHintBlock(): void
     {
         $token = str_repeat('b', 32);

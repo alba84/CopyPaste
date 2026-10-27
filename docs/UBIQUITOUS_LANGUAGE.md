@@ -28,6 +28,7 @@
 | Ttl | Срок жизни Secret от создания до истечения | Lifetime, Expiry |
 | Expiration | Момент, после которого Secret недоступен | Expire date |
 | Reveal | Успешная расшифровка и показ Plaintext | Decrypt (на уровне UI) |
+| Secret key visibility toggle | Элемент управления в поле SecretKey, который показывает значение ключа, пока пользователь удерживает его указателем, и/или переключает видимость при клавиатурной/AT-активации; при отпускании, потере фокуса или ином прерывании значение снова маскируется. Это UI-механика, не расшифровка | Reveal key, Show password, Показать пароль, Eye toggle (как термин) |
 | Burn-after-reading | Режим, при котором Secret удаляется после первого Reveal | One-time |
 | Purge | Физическое удаление истёкших Secret | Cleanup, Delete |
 | EncryptedPayload | Набор salt + nonce + ciphertext для одного Secret | Cipher, Blob |

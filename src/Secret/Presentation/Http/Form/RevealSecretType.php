@@ -15,7 +15,7 @@ final class RevealSecretType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder->add('secret', PasswordType::class, ['label' => 'Секретный ключ', 'empty_data' => '', 'attr' => ['maxlength' => 255, 'autocomplete' => 'current-password']]);
+        $builder->add('secret', PasswordType::class, ['label' => 'Секретный ключ', 'empty_data' => '', 'block_prefix' => 'secret_key', 'attr' => ['maxlength' => 255, 'autocomplete' => 'current-password']]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

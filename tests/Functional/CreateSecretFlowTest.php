@@ -67,6 +67,39 @@ final class CreateSecretFlowTest extends WebTestCase
         self::assertCount(1, $crawler->filter('input[name="create_paste[_token]"]'));
     }
 
+    public function testCreateFormRendersSecretKeyVisibilityToggleWithoutChangingPasswordContract(): void
+    {
+        $crawler = $this->client->request('GET', '/');
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('input[type="password"]'));
+        self::assertCount(1, $crawler->filter('input[type="password"][name="create_paste[secret]"]'));
+        self::assertCount(1, $crawler->filter('.secret-key-field > input[type="password"]'));
+        self::assertCount(1, $crawler->filter('.secret-key-field > button[type="button"][data-secret-key-visibility]'));
+
+        $input = $crawler->filter('input[type="password"][name="create_paste[secret]"]');
+        self::assertSame('255', $input->attr('maxlength'));
+        self::assertSame('new-password', $input->attr('autocomplete'));
+        self::assertSame('required', $input->attr('required'));
+        self::assertSame('input', $input->attr('class'));
+        self::assertSame('Придумайте ключ для шифрования', $input->attr('placeholder'));
+
+        $inputId = $input->attr('id');
+        self::assertNotNull($inputId);
+
+        self::assertCount(1, $crawler->filter('button[type="button"][data-secret-key-visibility]'));
+        $button = $crawler->filter('button[type="button"][data-secret-key-visibility]');
+        self::assertSame($inputId, $button->attr('aria-controls'));
+        self::assertSame('Показать секретный ключ', $button->attr('aria-label'));
+        self::assertSame('false', $button->attr('aria-pressed'));
+        self::assertNotNull($button->attr('hidden'));
+        self::assertNull($button->attr('name'));
+
+        $svgCount = $button->filter('svg')->count();
+        self::assertGreaterThan(0, $svgCount);
+        self::assertSame($svgCount, $button->filter('svg[aria-hidden="true"]')->count());
+    }
+
     public function testValidSubmissionRedirectsToCreatedPageWithAbsoluteLink(): void
     {
         $plaintext = 'Секретный текст';

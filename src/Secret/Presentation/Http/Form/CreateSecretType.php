@@ -20,7 +20,7 @@ final class CreateSecretType extends AbstractType
         $builder
             ->add('text', TextareaType::class, ['label' => 'Текст', 'empty_data' => '', 'attr' => ['rows' => 12, 'maxlength' => 100000]])
             ->add('hint', TextType::class, ['label' => 'Подсказка', 'required' => false, 'attr' => ['maxlength' => 255]])
-            ->add('secret', PasswordType::class, ['label' => 'Секретный ключ', 'empty_data' => '', 'attr' => ['maxlength' => 255, 'autocomplete' => 'new-password']]);
+            ->add('secret', PasswordType::class, ['label' => 'Секретный ключ', 'empty_data' => '', 'block_prefix' => 'secret_key', 'attr' => ['maxlength' => 255, 'autocomplete' => 'new-password']]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
